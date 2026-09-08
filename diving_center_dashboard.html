@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم حجوزات مركز الغوص</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .title-group h1 {
+            font-size: 1.5rem;
+            color: #38bdf8;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+
+        .btn-refresh {
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-refresh:hover {
+            background-color: #0369a1;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: bold;
+        }
+
+        .status-connected {
+            color: #4ade80;
+        }
+
+        .status-error {
+            color: #f87171;
+        }
+
+        .search-box {
+            margin-bottom: 24px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #38bdf8;
+        }
+
+        .table-container {
+            background-color: #1e293b;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+            font-size: 0.875rem;
+        }
+
+        th {
+            background-color: #0f172a;
+            color: #94a3b8;
+            padding: 12px 16px;
+            font-weight: 600;
+            border-bottom: 1px solid #334155;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #334155;
+            color: #e2e8f0;
+            white-space: nowrap;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #182234;
+        }
+
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title-group">
+            <h1>🥽 لوحة تحكم حجوزات مركز الغوص</h1>
+        </div>
+        <button class="btn-refresh" onclick="loadData()">🔄 تحديث البيانات</button>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-title">حالة الاتصال</div>
+            <div class="stat-value" id="connection-status">جاري الاتصال...</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">إجمالي الحجوزات</div>
+            <div class="stat-value" id="total-bookings">0</div>
+        </div>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="search-input" class="search-input" placeholder="🔍 ابحث برقم الفووتشر، اسم العميل، رقم الجواز، أو أي كلمة..." oninput="filterData()">
+    </div>
+
+    <div class="table-container">
+        <table id="data-table">
+            <thead>
+                <tr id="table-header"></tr>
+            </thead>
+            <tbody id="table-body">
+                <tr>
+                    <td colspan="100%" class="empty-state">جاري تحميل البيانات...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwksNXtxomv6aMarw4e1npEB6B0PTBk4_a5XuQN6oTsO1nog6fjcM1V2g3u7mLny5dO0A/exec";
+        let rawData = [];
+
+        function loadData() {
+            document.getElementById('connection-status').innerText = 'جاري التحميل...';
+            document.getElementById('connection-status').className = 'stat-value';
+
+            // remove previous jsonp script if exists
+            const oldScript = document.getElementById('jsonp-script');
+            if (oldScript) oldScript.remove();
+
+            const script = document.createElement('script');
+            script.id = 'jsonp-script';
+            script.src = SCRIPT_URL;
+            script.onerror = function() {
+                document.getElementById('connection-status').innerText = 'خطأ في الاتصال 🔴';
+                document.getElementById('connection-status').className = 'stat-value status-error';
+                document.getElementById('table-body').innerHTML = `
+                    <tr>
+                        <td colspan="100%" class="empty-state">
+                            ❌ تعذر جلب البيانات.<br><br>
+                            يرجى التأكد من إعدادات النشر على Google Apps Script.
+                        </td>
+                    </tr>`;
+            };
+            document.body.appendChild(script);
+        }
+
+        // Global Callback Function for JSONP
+        window.callback = function(data) {
+            if (!data || data.length === 0) {
+                document.getElementById('connection-status').innerText = 'لا توجد بيانات ⚠️';
+                return;
+            }
+
+            document.getElementById('connection-status').innerText = 'متصل 🟢';
+            document.getElementById('connection-status').className = 'stat-value status-connected';
+
+            rawData = data;
+            renderTable(rawData);
+        };
+
+        function renderTable(data) {
+            const headerRow = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
+
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="100%" class="empty-state">لا توجد نتائج متطابقة</td></tr>';
+                document.getElementById('total-bookings').innerText = '0';
+                return;
+            }
+
+            // Headers
+            const headers = data[0];
+            headerRow.innerHTML = '#';
+            headers.forEach(h => {
+                headerRow.innerHTML += `<th>${h}</th>`;
+            });
+
+            // Body
+            const rows = data.slice(1);
+            document.getElementById('total-bookings').innerText = rows.length;
+
+            tableBody.innerHTML = '';
+            rows.forEach((row, index) => {
+                let tr = '<tr>';
+                tr += `<td>${index + 1}</td>`;
+                row.forEach(cell => {
+                    tr += `<td>${cell !== undefined && cell !== null ? cell : ''}</td>`;
+                });
+                tr += '</tr>';
+                tableBody.innerHTML += tr;
+            });
+        }
+
+        function filterData() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            if (!query) {
+                renderTable(rawData);
+                return;
+            }
+
+            if (rawData.length <= 1) return;
+
+            const headers = rawData[0];
+            const filteredRows = rawData.slice(1).filter(row => {
+                return row.some(cell => String(cell).toLowerCase().includes(query));
+            });
+
+            renderTable([headers, ...filteredRows]);
+        }
+
+        // Run on page load
+        window.onload = loadData;
+    </script>
+</body>
+</html>
