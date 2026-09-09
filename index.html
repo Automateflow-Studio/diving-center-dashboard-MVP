@@ -21,6 +21,69 @@
             min-height: 100vh;
         }
 
+        /* Login Overlay Modal */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(15, 23, 42, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .login-card {
+            background-color: #1e293b;
+            padding: 32px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .login-card h2 {
+            color: #38bdf8;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Top Bar User Info */
+        .user-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1e293b;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+
+        .user-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-manager { background-color: #f59e0b; color: #0f172a; }
+        .badge-staff { background-color: #0284c7; color: white; }
+
+        .btn-logout {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
         /* Top Navigation Tabs */
         .tab-navigation {
             display: flex;
@@ -121,9 +184,7 @@
         }
 
         .status-connected { color: #4ade80; }
-        .status-error { color: #f87171; }
 
-        /* Card Section Styling */
         .card {
             background-color: #1e293b;
             padding: 20px;
@@ -141,7 +202,6 @@
             gap: 8px;
         }
 
-        /* Form Grid Layout */
         .booking-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -168,6 +228,7 @@
             padding: 10px 12px;
             border-radius: 6px;
             font-size: 0.9rem;
+            width: 100%;
         }
 
         .form-control:focus {
@@ -213,48 +274,6 @@
             padding: 10px 20px;
             border-radius: 6px;
             cursor: pointer;
-        }
-
-        .btn-clear:hover { background-color: #334155; }
-
-        /* Upload Card Styling */
-        .upload-form {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .file-input {
-            background: #0f172a;
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #334155;
-            cursor: pointer;
-        }
-
-        .file-input::file-selector-button {
-            background: #0284c7;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 10px;
-        }
-
-        .btn-process {
-            background-color: #22c55e;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .controls-bar {
@@ -322,6 +341,44 @@
 
         tr:hover td { background-color: #182234; }
 
+        /* Status Badge Styles */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        .status-pending { background-color: #f59e0b; color: #0f172a; }
+        .status-accepted { background-color: #22c55e; color: #0f172a; }
+        .status-canceled { background-color: #ef4444; color: white; }
+
+        /* Action Buttons for Manager */
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-accept {
+            background-color: #22c55e;
+            color: #0f172a;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-cancel {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
         .empty-state {
             padding: 40px;
             text-align: center;
@@ -331,174 +388,232 @@
 </head>
 <body>
 
-    <!-- Tab Navigation Bar -->
-    <div class="tab-navigation">
-        <button class="tab-btn active" onclick="switchTab(event, 'daily-operations')">Daily Operations</button>
-        <button class="tab-btn" onclick="switchTab(event, 'id-licenses')">ID & Licenses</button>
-    </div>
-
-    <!-- TAB 1: Daily Operations -->
-    <div id="daily-operations" class="tab-content active">
-        <div class="card">
-            <h3 class="card-title">📝 New Booking</h3>
-            <form id="bookingForm" onsubmit="submitBooking(event)">
-                <div class="booking-grid">
-                    <div class="form-group">
-                        <label>Voucher no.</label>
-                        <input type="text" id="voucherNo" class="form-control" placeholder="12234" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Client ID no.</label>
-                        <input type="text" id="clientID" class="form-control" placeholder="Enter Passport / ID" oninput="lookupClientInfo()" required>
-                        <span id="clientPreviewBadge" class="client-preview-badge"></span>
-                    </div>
-                    <div class="form-group">
-                        <label>Customer Name (Auto-fetched)</label>
-                        <input type="text" id="customerName" class="form-control" placeholder="Auto-filled from Sheet1" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Nationality / Issuing Authority (Auto-fetched)</label>
-                        <input type="text" id="nationality" class="form-control" placeholder="Auto-filled from Sheet1" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Activity</label>
-                        <select id="activity" class="form-control" required>
-                            <option value="">Select activity</option>
-                            <option value="Diving">Diving</option>
-                            <option value="Snorkeling">Snorkeling</option>
-                            <option value="Speedboat">Speedboat</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Supplier</label>
-                        <input type="text" id="supplier" class="form-control" placeholder="Boat / operator">
-                    </div>
-                    <div class="form-group">
-                        <label>Guide</label>
-                        <input type="text" id="guide" class="form-control" placeholder="Assigned guide">
-                    </div>
-                    <div class="form-group">
-                        <label>Guests</label>
-                        <input type="number" id="guests" class="form-control" value="1" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label>Date</label>
-                        <input type="date" id="bookingDate" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Pick-up time</label>
-                        <input type="time" id="pickupTime" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Payment method</label>
-                        <select id="paymentMethod" class="form-control">
-                            <option value="USD Cash">USD Cash</option>
-                            <option value="EUR Credit">EUR Credit</option>
-                            <option value="Card">Card</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Total amount</label>
-                        <input type="number" id="totalAmount" class="form-control" step="0.01" placeholder="0.00">
-                    </div>
-                    <div class="form-group">
-                        <label>Paid amount</label>
-                        <input type="number" id="paidAmount" class="form-control" step="0.01" placeholder="0.00">
-                    </div>
-                    <div class="form-group">
-                        <label>Notes</label>
-                        <input type="text" id="notes" class="form-control" placeholder="Cert level, pick-up point...">
-                    </div>
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="login-overlay">
+        <div class="login-card">
+            <h2>🔑 Sign In</h2>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>Username</label>
+                    <input type="text" id="username" class="form-control" placeholder="Enter name" required>
                 </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn-submit" id="saveBookingBtn">Save booking</button>
-                    <button type="reset" class="btn-clear" onclick="resetBookingForm()">Clear form</button>
-                    <span id="bookingStatus" style="align-self: center; font-weight: 500;"></span>
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label>Select Role</label>
+                    <select id="userRole" class="form-control" required>
+                        <option value="staff">Staff / Receptionist</option>
+                        <option value="manager">Manager</option>
+                    </select>
                 </div>
+                <button type="submit" class="btn-submit" style="width: 100%;">Login to System</button>
             </form>
-        </div>
-
-        <div class="controls-bar">
-            <input type="text" id="search-booking" class="search-input" placeholder="🔍 Search Bookings..." oninput="filterBookings()">
-            <button class="btn-export" onclick="exportToExcel('bookings-table')">📊 Export CSV</button>
-        </div>
-
-        <div class="table-container">
-            <table id="bookings-table">
-                <thead>
-                    <tr>
-                        <th>Voucher</th>
-                        <th>Client ID</th>
-                        <th>Customer Name</th>
-                        <th>Nationality</th>
-                        <th>Activity</th>
-                        <th>Supplier</th>
-                        <th>Guide</th>
-                        <th>Time</th>
-                        <th>Payment</th>
-                        <th>Total</th>
-                        <th>Paid</th>
-                    </tr>
-                </thead>
-                <tbody id="bookings-table-body">
-                    <tr><td colspan="11" class="empty-state">Loading bookings data...</td></tr>
-                </tbody>
-            </table>
         </div>
     </div>
 
-    <!-- TAB 2: ID & Licenses -->
-    <div id="id-licenses" class="tab-content">
-        <div class="header">
-            <div class="title-group">
-                <h1>🪪 ID & License Management Dashboard</h1>
+    <!-- MAIN APP CONTENT -->
+    <div id="appContent" style="display: none;">
+        <!-- USER BAR -->
+        <div class="user-bar">
+            <div>
+                Logged in as: <strong id="currentUserName">-</strong> 
+                <span id="currentUserRoleBadge" class="user-badge">-</span>
             </div>
-            <button class="btn-refresh" onclick="loadData()">🔄 Refresh Data</button>
+            <button class="btn-logout" onclick="logout()">Sign Out</button>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-title">Connection Status</div>
-                <div class="stat-value" id="connection-status">Connecting...</div>
+        <!-- Tab Navigation Bar -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab(event, 'daily-operations')">Daily Operations</button>
+            <button class="tab-btn" onclick="switchTab(event, 'id-licenses')">ID & Licenses</button>
+        </div>
+
+        <!-- TAB 1: Daily Operations -->
+        <div id="daily-operations" class="tab-content active">
+            <!-- Booking Form (Hidden for Manager if desired, or kept for adding) -->
+            <div class="card" id="bookingFormCard">
+                <h3 class="card-title">📝 New Booking</h3>
+                <form id="bookingForm" onsubmit="submitBooking(event)">
+                    <div class="booking-grid">
+                        <div class="form-group">
+                            <label>Voucher no.</label>
+                            <input type="text" id="voucherNo" class="form-control" placeholder="12234" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Client ID no.</label>
+                            <input type="text" id="clientID" class="form-control" placeholder="Enter Passport / ID" oninput="lookupClientInfo()" required>
+                            <span id="clientPreviewBadge" class="client-preview-badge"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Name (Auto-fetched)</label>
+                            <input type="text" id="customerName" class="form-control" placeholder="Auto-filled from Sheet1" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Nationality / Authority (Auto-fetched)</label>
+                            <input type="text" id="nationality" class="form-control" placeholder="Auto-filled from Sheet1" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Activity</label>
+                            <select id="activity" class="form-control" required>
+                                <option value="">Select activity</option>
+                                <option value="Diving">Diving</option>
+                                <option value="Snorkeling">Snorkeling</option>
+                                <option value="Speedboat">Speedboat</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Supplier</label>
+                            <input type="text" id="supplier" class="form-control" placeholder="Boat / operator">
+                        </div>
+                        <div class="form-group">
+                            <label>Guide</label>
+                            <input type="text" id="guide" class="form-control" placeholder="Assigned guide">
+                        </div>
+                        <div class="form-group">
+                            <label>Guests</label>
+                            <input type="number" id="guests" class="form-control" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="bookingDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Pick-up time</label>
+                            <input type="time" id="pickupTime" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Payment method</label>
+                            <select id="paymentMethod" class="form-control">
+                                <option value="USD Cash">USD Cash</option>
+                                <option value="EUR Credit">EUR Credit</option>
+                                <option value="Card">Card</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Total amount</label>
+                            <input type="number" id="totalAmount" class="form-control" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Paid amount</label>
+                            <input type="number" id="paidAmount" class="form-control" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <input type="text" id="notes" class="form-control" placeholder="Cert level, pick-up point...">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit" id="saveBookingBtn">Save booking</button>
+                        <button type="reset" class="btn-clear" onclick="resetBookingForm()">Clear form</button>
+                        <span id="bookingStatus" style="align-self: center; font-weight: 500;"></span>
+                    </div>
+                </form>
             </div>
-            <div class="stat-card">
-                <div class="stat-title">Total Registered Clients</div>
-                <div class="stat-value" id="total-records">0</div>
+
+            <div class="controls-bar">
+                <input type="text" id="search-booking" class="search-input" placeholder="🔍 Search Bookings..." oninput="filterBookings()">
+                <button class="btn-export" onclick="exportToExcel('bookings-table')">📊 Export CSV</button>
+            </div>
+
+            <div class="table-container">
+                <table id="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>Voucher</th>
+                            <th>Client ID</th>
+                            <th>Customer Name</th>
+                            <th>Nationality</th>
+                            <th>Activity</th>
+                            <th>Supplier</th>
+                            <th>Guide</th>
+                            <th>Time</th>
+                            <th>Payment</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Status</th>
+                            <th id="actionsHeader" style="display:none;">Manager Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-table-body">
+                        <tr><td colspan="13" class="empty-state">Loading bookings data...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="card">
-            <h3 class="card-title">📤 Upload New Passport / ID Document</h3>
-            <form id="uploadForm" class="upload-form" onsubmit="uploadDocument(event)">
-                <input type="file" id="fileInput" class="file-input" accept="image/*,application/pdf" required>
-                <button type="submit" id="uploadBtn" class="btn-process">✨ Process Document</button>
-                <span id="uploadStatus" class="upload-status"></span>
-            </form>
-        </div>
+        <!-- TAB 2: ID & Licenses -->
+        <div id="id-licenses" class="tab-content">
+            <div class="header">
+                <div class="title-group">
+                    <h1>🪪 ID & License Management Dashboard</h1>
+                </div>
+                <button class="btn-refresh" onclick="loadData()">🔄 Refresh Data</button>
+            </div>
 
-        <div class="controls-bar">
-            <input type="text" id="search-input" class="search-input" placeholder="🔍 Search documents..." oninput="filterData()">
-            <button class="btn-export" onclick="exportToExcel('data-table')">📊 Export to Excel</button>
-        </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">Connection Status</div>
+                    <div class="stat-value" id="connection-status">Connecting...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Total Registered Clients</div>
+                    <div class="stat-value" id="total-records">0</div>
+                </div>
+            </div>
 
-        <div class="table-container">
-            <table id="data-table">
-                <thead><tr id="table-header"></tr></thead>
-                <tbody id="table-body">
-                    <tr><td colspan="100%" class="empty-state">Loading documents data...</td></tr>
-                </tbody>
-            </table>
+            <div class="controls-bar">
+                <input type="text" id="search-input" class="search-input" placeholder="🔍 Search documents..." oninput="filterData()">
+                <button class="btn-export" onclick="exportToExcel('data-table')">📊 Export to Excel</button>
+            </div>
+
+            <div class="table-container">
+                <table id="data-table">
+                    <thead><tr id="table-header"></tr></thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="100%" class="empty-state">Loading documents data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBAFTsyRTu0lL5VfUL9P7XLl_jR7dexGy_FKXEfnc1Z-kozZpwezhi4xNvayA6DrhsZQ/exec";
-        const N8N_WEBHOOK_URL = "https://Automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
         
+        let currentUser = null;
         let rawData = [];
         let rawBookingsData = [];
         let clientMap = {};
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const role = document.getElementById('userRole').value;
+
+            currentUser = { username, role };
+
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
+
+            document.getElementById('currentUserName').innerText = username;
+            const badge = document.getElementById('currentUserRoleBadge');
+            badge.innerText = role;
+            badge.className = `user-badge badge-${role}`;
+
+            // Show/Hide Manager Columns
+            if (role === 'manager') {
+                document.getElementById('actionsHeader').style.display = 'table-cell';
+            } else {
+                document.getElementById('actionsHeader').style.display = 'none';
+            }
+
+            loadData();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('appContent').style.display = 'none';
+        }
 
         function switchTab(e, tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -548,21 +663,14 @@
             const status = document.getElementById('bookingStatus');
             const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
 
-            if (!clientIDInput) {
-                alert("⚠️ Please enter a Client ID / Passport number.");
-                return;
-            }
-
             if (!clientMap[clientIDInput]) {
-                status.style.color = "#f87171";
-                status.innerText = "❌ Client ID not found! Upload passport/ID first in (ID & Licenses) tab.";
-                alert("⚠️ Client ID not found in ID & Licenses database (Sheet1)!\n\nPlease upload the client's Passport/ID document first under the 'ID & Licenses' tab before saving this booking.");
+                alert("⚠️ Client ID not found in ID & Licenses database (Sheet1)!");
                 return;
             }
 
             btn.disabled = true;
             status.style.color = "#38bdf8";
-            status.innerText = "⏳ Saving booking to Sheet2...";
+            status.innerText = "⏳ Saving booking...";
 
             const payload = {
                 voucherNo: document.getElementById('voucherNo').value,
@@ -576,7 +684,8 @@
                 paymentMethod: document.getElementById('paymentMethod').value,
                 totalAmount: document.getElementById('totalAmount').value,
                 paidAmount: document.getElementById('paidAmount').value,
-                notes: document.getElementById('notes').value
+                notes: document.getElementById('notes').value,
+                status: 'Pending' // Default Status
             };
 
             try {
@@ -588,7 +697,7 @@
                 });
 
                 status.style.color = "#4ade80";
-                status.innerText = "✅ Booking Saved Successfully!";
+                status.innerText = "✅ Booking Saved (Pending Manager Approval)!";
                 
                 resetBookingForm();
                 setTimeout(() => status.innerText = "", 4000);
@@ -598,6 +707,28 @@
                 status.innerText = "❌ Error saving booking";
             } finally {
                 btn.disabled = false;
+            }
+        }
+
+        async function updateBookingStatus(voucherNo, newStatus) {
+            if (!confirm(`Are you sure you want to mark Voucher #${voucherNo} as ${newStatus}?`)) return;
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'updateStatus',
+                        voucherNo: voucherNo,
+                        status: newStatus
+                    })
+                });
+
+                alert(`✅ Status updated to ${newStatus}`);
+                loadData();
+            } catch (err) {
+                alert("❌ Failed to update status");
             }
         }
 
@@ -625,9 +756,7 @@
             document.getElementById('connection-status').className = 'stat-value status-connected';
             rawData = data;
             
-            // Map headers dynamically to match columns in Sheet1
             const headers = data[0].map(h => String(h).trim().toLowerCase());
-            
             const idIndex = headers.indexOf('id_number');
             const nameIndex = headers.indexOf('full_name');
             const authorityIndex = headers.indexOf('issuing_authority');
@@ -636,15 +765,11 @@
             data.slice(1).forEach(row => {
                 const rawId = idIndex !== -1 ? row[idIndex] : (row[3] || row[0]);
                 const id = String(rawId || '').trim().toLowerCase();
-                
                 const name = nameIndex !== -1 ? row[nameIndex] : row[0];
                 const authority = authorityIndex !== -1 ? row[authorityIndex] : (row[2] || 'N/A');
 
                 if (id) {
-                    clientMap[id] = {
-                        name: name || 'Unknown',
-                        nationality: authority || 'N/A'
-                    };
+                    clientMap[id] = { name: name || 'Unknown', nationality: authority || 'N/A' };
                 }
             });
 
@@ -653,7 +778,7 @@
 
         window.callbackSheet2 = function(data) {
             if (!data || data.length <= 1) {
-                document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="11" class="empty-state">No bookings recorded yet.</td></tr>';
+                document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
                 return;
             }
             rawBookingsData = data;
@@ -663,14 +788,33 @@
         function renderBookingsTable(rows) {
             const tbody = document.getElementById('bookings-table-body');
             tbody.innerHTML = '';
+            
+            const isManager = currentUser && currentUser.role === 'manager';
+
             rows.forEach(row => {
                 const voucher = row[0] || '';
                 const clientID = String(row[1] || '').trim();
                 const key = clientID.toLowerCase();
+                const clientInfo = clientMap[key] || { name: 'N/A', nationality: 'N/A' };
 
-                const clientInfo = clientMap[key] || { name: 'N/A (Not Found)', nationality: 'N/A' };
+                // Get status column (assumed at index 11 or fallback to Pending)
+                const status = row[11] || 'Pending';
+                const statusClass = `status-${status.toLowerCase()}`;
 
                 const tr = document.createElement('tr');
+                
+                let actionTd = '';
+                if (isManager) {
+                    actionTd = `
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">✓ Accept</button>
+                                <button class="btn-cancel" onclick="updateBookingStatus('${voucher}', 'Canceled')">✕ Cancel</button>
+                            </div>
+                        </td>
+                    `;
+                }
+
                 tr.innerHTML = `
                     <td>${voucher}</td>
                     <td><strong>${clientID}</strong></td>
@@ -683,6 +827,8 @@
                     <td>${row[8] || ''}</td>
                     <td>$${row[9] || '0'}</td>
                     <td>$${row[10] || '0'}</td>
+                    <td><span class="status-badge ${statusClass}">${status}</span></td>
+                    ${actionTd}
                 `;
                 tbody.appendChild(tr);
             });
@@ -745,39 +891,7 @@
             XLSX.writeFile(workbook, `Export_${tableId}.xlsx`);
         }
 
-        async function uploadDocument(event) {
-            event.preventDefault();
-            const fileInput = document.getElementById('fileInput');
-            const statusText = document.getElementById('uploadStatus');
-            const uploadBtn = document.getElementById('uploadBtn');
-
-            if (!fileInput.files[0]) return;
-
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-
-            uploadBtn.disabled = true;
-            statusText.style.color = "#38bdf8";
-            statusText.innerText = "⏳ Processing...";
-
-            try {
-                const response = await fetch(N8N_WEBHOOK_URL, { method: "POST", body: formData });
-                if (response.ok) {
-                    statusText.style.color = "#4ade80";
-                    statusText.innerText = "✅ Successfully Processed!";
-                    fileInput.value = "";
-                    setTimeout(loadData, 2000);
-                }
-            } catch (err) {
-                statusText.style.color = "#f87171";
-                statusText.innerText = "❌ Error uploading.";
-            } finally {
-                uploadBtn.disabled = false;
-            }
-        }
-
         document.getElementById('bookingDate').valueAsDate = new Date();
-        window.onload = loadData;
     </script>
 </body>
 </html>
