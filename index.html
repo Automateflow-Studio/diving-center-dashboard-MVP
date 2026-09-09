@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم حجوزات مركز الغوص</title>
+    <title>ID & License Management Dashboard</title>
     <style>
         * {
             box-sizing: border-box;
@@ -28,27 +28,19 @@
             border-bottom: 1px solid #1e293b;
         }
 
-        .title-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
         .title-group h1 {
             font-size: 1.5rem;
             color: #38bdf8;
-        }
-
-        .subtitle {
-            font-size: 0.875rem;
-            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .btn-refresh {
             background-color: #0284c7;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 18px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 500;
@@ -124,17 +116,20 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            text-align: right;
+            text-align: left;
             font-size: 0.875rem;
         }
 
         th {
             background-color: #0f172a;
-            color: #94a3b8;
-            padding: 12px 16px;
+            color: #38bdf8;
+            padding: 14px 16px;
             font-weight: 600;
             border-bottom: 1px solid #334155;
             white-space: nowrap;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
         }
 
         td {
@@ -163,24 +158,24 @@
 
     <div class="header">
         <div class="title-group">
-            <h1>🥽 لوحة تحكم حجوزات مركز الغوص</h1>
+            <h1>🪪 ID & License OCR Dashboard</h1>
         </div>
-        <button class="btn-refresh" onclick="loadData()">🔄 تحديث البيانات</button>
+        <button class="btn-refresh" onclick="loadData()">🔄 Refresh Data</button>
     </div>
 
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-title">حالة الاتصال</div>
-            <div class="stat-value" id="connection-status">جاري الاتصال...</div>
+            <div class="stat-title">Connection Status</div>
+            <div class="stat-value" id="connection-status">Connecting...</div>
         </div>
         <div class="stat-card">
-            <div class="stat-title">إجمالي الحجوزات</div>
-            <div class="stat-value" id="total-bookings">0</div>
+            <div class="stat-title">Total Records</div>
+            <div class="stat-value" id="total-records">0</div>
         </div>
     </div>
 
     <div class="search-box">
-        <input type="text" id="search-input" class="search-input" placeholder="🔍 ابحث برقم الفووتشر، اسم العميل، رقم الجواز، أو أي كلمة..." oninput="filterData()">
+        <input type="text" id="search-input" class="search-input" placeholder="🔍 Search by ID Number, Document Type, Authority, or Date..." oninput="filterData()">
     </div>
 
     <div class="table-container">
@@ -190,7 +185,7 @@
             </thead>
             <tbody id="table-body">
                 <tr>
-                    <td colspan="100%" class="empty-state">جاري تحميل البيانات...</td>
+                    <td colspan="100%" class="empty-state">Loading documents data...</td>
                 </tr>
             </tbody>
         </table>
@@ -201,10 +196,9 @@
         let rawData = [];
 
         function loadData() {
-            document.getElementById('connection-status').innerText = 'جاري التحميل...';
+            document.getElementById('connection-status').innerText = 'Loading...';
             document.getElementById('connection-status').className = 'stat-value';
 
-            // remove previous jsonp script if exists
             const oldScript = document.getElementById('jsonp-script');
             if (oldScript) oldScript.remove();
 
@@ -212,27 +206,26 @@
             script.id = 'jsonp-script';
             script.src = SCRIPT_URL;
             script.onerror = function() {
-                document.getElementById('connection-status').innerText = 'خطأ في الاتصال 🔴';
+                document.getElementById('connection-status').innerText = 'Error 🔴';
                 document.getElementById('connection-status').className = 'stat-value status-error';
                 document.getElementById('table-body').innerHTML = `
                     <tr>
                         <td colspan="100%" class="empty-state">
-                            ❌ تعذر جلب البيانات.<br><br>
-                            يرجى التأكد من إعدادات النشر على Google Apps Script.
+                            ❌ Failed to load data.<br><br>
+                            Please verify Google Apps Script deployment settings.
                         </td>
                     </tr>`;
             };
             document.body.appendChild(script);
         }
 
-        // Global Callback Function for JSONP
         window.callback = function(data) {
             if (!data || data.length === 0) {
-                document.getElementById('connection-status').innerText = 'لا توجد بيانات ⚠️';
+                document.getElementById('connection-status').innerText = 'No Data ⚠️';
                 return;
             }
 
-            document.getElementById('connection-status').innerText = 'متصل 🟢';
+            document.getElementById('connection-status').innerText = 'Connected 🟢';
             document.getElementById('connection-status').className = 'stat-value status-connected';
 
             rawData = data;
@@ -244,21 +237,21 @@
             const tableBody = document.getElementById('table-body');
 
             if (data.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="100%" class="empty-state">لا توجد نتائج متطابقة</td></tr>';
-                document.getElementById('total-bookings').innerText = '0';
+                tableBody.innerHTML = '<tr><td colspan="100%" class="empty-state">No matching records found</td></tr>';
+                document.getElementById('total-records').innerText = '0';
                 return;
             }
 
             // Headers
             const headers = data[0];
-            headerRow.innerHTML = '#';
+            headerRow.innerHTML = '<th>#</th>';
             headers.forEach(h => {
                 headerRow.innerHTML += `<th>${h}</th>`;
             });
 
             // Body
             const rows = data.slice(1);
-            document.getElementById('total-bookings').innerText = rows.length;
+            document.getElementById('total-records').innerText = rows.length;
 
             tableBody.innerHTML = '';
             rows.forEach((row, index) => {
@@ -289,7 +282,6 @@
             renderTable([headers, ...filteredRows]);
         }
 
-        // Run on page load
         window.onload = loadData;
     </script>
 </body>
