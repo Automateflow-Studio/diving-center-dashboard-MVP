@@ -428,7 +428,7 @@
 
         <!-- TAB 1: Daily Operations -->
         <div id="daily-operations" class="tab-content active">
-            <!-- Booking Form (Hidden for Manager if desired, or kept for adding) -->
+            <!-- Booking Form -->
             <div class="card" id="bookingFormCard">
                 <h3 class="card-title">📝 New Booking</h3>
                 <form id="bookingForm" onsubmit="submitBooking(event)">
@@ -577,7 +577,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBAFTsyRTu0lL5VfUL9P7XLl_jR7dexGy_FKXEfnc1Z-kozZpwezhi4xNvayA6DrhsZQ/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxsgl4zAv9AYNClh4OJd1suQAg0N4pIGWw1SfNBtMbzIdNmzBi_ZKOd_Qu0GueIb7SerA/exec";
         
         let currentUser = null;
         let rawData = [];
@@ -685,7 +685,7 @@
                 totalAmount: document.getElementById('totalAmount').value,
                 paidAmount: document.getElementById('paidAmount').value,
                 notes: document.getElementById('notes').value,
-                status: 'Pending' // Default Status
+                status: 'Pending'
             };
 
             try {
@@ -797,7 +797,6 @@
                 const key = clientID.toLowerCase();
                 const clientInfo = clientMap[key] || { name: 'N/A', nationality: 'N/A' };
 
-                // Get status column (assumed at index 11 or fallback to Pending)
                 const status = row[11] || 'Pending';
                 const statusClass = `status-${status.toLowerCase()}`;
 
