@@ -1,129 +1,211 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Operations & Bookings</title>
+    <title>Diving Center Management Pro</title>
+    <!-- XLSX Library for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --border-color: #334155;
-            --text-color: #f8fafc;
-            --text-muted: #94a3b8;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --danger: #ef4444;
-            --success: #22c55e;
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            padding: 20px;
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 24px;
+            min-height: 100vh;
         }
 
-        header {
+        /* Login Overlay Modal */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(15, 23, 42, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .login-card {
+            background-color: #1e293b;
+            padding: 32px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .login-card h2 {
+            color: #38bdf8;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Top Bar User Info */
+        .user-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: var(--card-bg);
-            padding: 15px 25px;
+            background-color: #1e293b;
+            padding: 12px 20px;
             border-radius: 8px;
-            border: 1px solid var(--border-color);
             margin-bottom: 20px;
+            border: 1px solid #334155;
         }
 
-        .user-info {
+        .user-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-manager { background-color: #f59e0b; color: #0f172a; }
+        .badge-staff { background-color: #0284c7; color: white; }
+
+        .btn-logout {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        /* Top Navigation Tabs */
+        .tab-navigation {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #1e293b;
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: #0284c7;
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background-color: #1e293b;
+            color: #f8fafc;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .title-group h1 {
+            font-size: 1.5rem;
+            color: #38bdf8;
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 14px;
         }
 
-        .badge-staff {
-            background-color: var(--primary);
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .btn {
-            background-color: var(--danger);
+        .btn-refresh {
+            background-color: #0284c7;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 18px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        .btn-primary {
-            background-color: var(--primary);
-        }
-
-        .btn-primary:hover {
-            background-color: var(--primary-hover);
-        }
-
-        nav {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .nav-tab {
-            background-color: var(--card-bg);
-            color: var(--text-muted);
-            border: 1px solid var(--border-color);
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .nav-tab.active {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .form-container {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-
-        .form-title {
+            font-weight: 500;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: var(--primary);
+            transition: background-color 0.2s;
         }
 
-        .form-grid {
+        .btn-refresh:hover {
+            background-color: #0369a1;
+        }
+
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: bold;
+        }
+
+        .status-connected { color: #4ade80; }
+
+        .card {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            color: #38bdf8;
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .booking-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
             margin-bottom: 20px;
         }
 
@@ -133,48 +215,102 @@
             gap: 6px;
         }
 
-        label {
-            font-size: 12px;
-            color: var(--text-muted);
+        .form-group label {
+            font-size: 0.8rem;
+            color: #94a3b8;
             font-weight: 500;
         }
 
-        input, select {
+        .form-control {
             background-color: #0f172a;
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 10px;
+            border: 1px solid #334155;
+            color: white;
+            padding: 10px 12px;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 0.9rem;
+            width: 100%;
         }
 
-        input:focus, select:focus {
+        .form-control:focus {
             outline: none;
-            border-color: var(--primary);
+            border-color: #38bdf8;
+        }
+
+        .form-control[readonly] {
+            background-color: #1e293b;
+            color: #38bdf8;
+            font-weight: bold;
+            cursor: not-allowed;
+        }
+
+        .client-preview-badge {
+            font-size: 0.85rem;
+            color: #4ade80;
+            margin-top: 4px;
+            display: none;
         }
 
         .form-actions {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
-        .search-export-bar {
+        .btn-submit {
+            background-color: #0f766e;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-submit:hover { background-color: #115e59; }
+
+        .btn-clear {
+            background-color: transparent;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .controls-bar {
             display: flex;
-            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 24px;
             align-items: center;
-            margin-bottom: 15px;
-            gap: 15px;
         }
 
         .search-input {
             flex: 1;
-            max-width: 400px;
+            padding: 12px 16px;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .btn-export {
+            background-color: #16a34a;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
         }
 
         .table-container {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
+            background-color: #1e293b;
             border-radius: 8px;
+            border: 1px solid #334155;
             overflow-x: auto;
         }
 
@@ -182,181 +318,442 @@
             width: 100%;
             border-collapse: collapse;
             text-align: left;
-            font-size: 13px;
+            font-size: 0.875rem;
         }
 
         th {
-            background-color: #111827;
-            color: var(--text-muted);
-            padding: 12px 15px;
+            background-color: #0f172a;
+            color: #38bdf8;
+            padding: 14px 16px;
             font-weight: 600;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid #334155;
             white-space: nowrap;
+            text-transform: uppercase;
+            font-size: 0.75rem;
         }
 
         td {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            border-bottom: 1px solid #334155;
+            color: #e2e8f0;
             white-space: nowrap;
         }
 
-        tr:last-child td {
-            border-bottom: none;
+        tr:hover td { background-color: #182234; }
+
+        /* Status Badge Styles */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        .status-pending { background-color: #f59e0b; color: #0f172a; }
+        .status-accepted { background-color: #22c55e; color: #0f172a; }
+        .status-canceled { background-color: #ef4444; color: white; }
+
+        /* Action Buttons for Manager */
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-accept {
+            background-color: #22c55e;
+            color: #0f172a;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-cancel {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
         }
 
         .empty-state {
+            padding: 40px;
             text-align: center;
-            color: var(--text-muted);
-            padding: 30px !important;
-        }
-
-        #connection-status {
-            margin-left: 10px;
-            font-size: 12px;
+            color: #94a3b8;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="user-info">
-            Logged in as: <strong>hh</strong> <span class="badge-staff">STAFF</span>
-            <span id="connection-status" class="text-muted">Connecting...</span>
-        </div>
-        <button class="btn">Sign Out</button>
-    </header>
-
-    <nav>
-        <button class="nav-tab active">Daily Operations</button>
-        <button class="nav-tab">ID & Licenses</button>
-    </nav>
-
-    <div class="form-container">
-        <div class="form-title">
-            <span>📝</span> New Booking
-        </div>
-        <div class="form-grid">
-            <div class="form-group">
-                <label>Voucher no.</label>
-                <input type="text" id="voucherNo" value="12234" readonly>
-            </div>
-            <div class="form-group">
-                <label>Client ID no.</label>
-                <input type="text" id="clientId" placeholder="Enter Passport / ID">
-            </div>
-            <div class="form-group">
-                <label>Customer Name (Auto-fetched)</label>
-                <input type="text" id="customerName" placeholder="Auto-filled from Sheet1" readonly>
-            </div>
-            <div class="form-group">
-                <label>Nationality / Authority (Auto-fetched)</label>
-                <input type="text" id="nationality" placeholder="Auto-filled from Sheet1" readonly>
-            </div>
-            <div class="form-group">
-                <label>Activity</label>
-                <select id="activity">
-                    <option value="">Select activity</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Supplier</label>
-                <input type="text" id="supplier" placeholder="Boat / operator">
-            </div>
-            <div class="form-group">
-                <label>Guide</label>
-                <input type="text" id="guide" placeholder="Assigned guide">
-            </div>
-            <div class="form-group">
-                <label>Guests</label>
-                <input type="number" id="guests" value="1" min="1">
-            </div>
-            <div class="form-group">
-                <label>Date</label>
-                <input type="date" id="bookingDate">
-            </div>
-            <div class="form-group">
-                <label>Pick-up time</label>
-                <input type="time" id="pickupTime" value="12:30">
-            </div>
-            <div class="form-group">
-                <label>Payment method</label>
-                <select id="paymentMethod">
-                    <option value="USD Cash">USD Cash</option>
-                    <option value="Credit Card">Credit Card</option>
-                    <option value="Online">Online</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Total amount</label>
-                <input type="number" id="totalAmount" value="0.00" step="0.01">
-            </div>
-            <div class="form-group">
-                <label>Paid amount</label>
-                <input type="number" id="paidAmount" value="0.00" step="0.01">
-            </div>
-            <div class="form-group" style="grid-column: span 2;">
-                <label>Notes</label>
-                <input type="text" id="notes" placeholder="Cert level, pick-up point...">
-            </div>
-        </div>
-        <div class="form-actions">
-            <button class="btn btn-primary" onclick="saveBooking()">Save booking</button>
-            <button class="btn" style="background-color: transparent; border: 1px solid var(--border-color); color: var(--text-color);" onclick="clearForm()">Clear form</button>
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="login-overlay">
+        <div class="login-card">
+            <h2>🔑 Sign In</h2>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>Username</label>
+                    <input type="text" id="username" class="form-control" placeholder="Enter name" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label>Select Role</label>
+                    <select id="userRole" class="form-control" required>
+                        <option value="staff">Staff / Receptionist</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-submit" style="width: 100%;">Login to System</button>
+            </form>
         </div>
     </div>
 
-    <div class="search-export-bar">
-        <input type="text" class="search-input" id="searchBookings" placeholder="Search Bookings..." oninput="filterBookings()">
-        <button class="btn btn-primary" style="background-color: #10b981;" onclick="exportCSV()">📥 Export CSV</button>
-    </div>
+    <!-- MAIN APP CONTENT -->
+    <div id="appContent" style="display: none;">
+        <!-- USER BAR -->
+        <div class="user-bar">
+            <div>
+                Logged in as: <strong id="currentUserName">-</strong> 
+                <span id="currentUserRoleBadge" class="user-badge">-</span>
+            </div>
+            <button class="btn-logout" onclick="logout()">Sign Out</button>
+        </div>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>VOUCHER</th>
-                    <th>CLIENT ID</th>
-                    <th>CUSTOMER NAME</th>
-                    <th>NATIONALITY</th>
-                    <th>ACTIVITY</th>
-                    <th>SUPPLIER</th>
-                    <th>GUIDE</th>
-                    <th>TIME</th>
-                    <th>PAYMENT</th>
-                    <th>TOTAL</th>
-                    <th>PAID</th>
-                    <th>STATUS</th>
-                </tr>
-            </thead>
-            <tbody id="bookings-table-body">
-                <tr><td colspan="12" class="empty-state">No bookings recorded yet.</td></tr>
-            </tbody>
-        </table>
+        <!-- Tab Navigation Bar -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab(event, 'daily-operations')">Daily Operations</button>
+            <button class="tab-btn" onclick="switchTab(event, 'id-licenses')">ID & Licenses</button>
+        </div>
+
+        <!-- TAB 1: Daily Operations -->
+        <div id="daily-operations" class="tab-content active">
+            <!-- Booking Form -->
+            <div class="card" id="bookingFormCard">
+                <h3 class="card-title">📝 New Booking</h3>
+                <form id="bookingForm" onsubmit="submitBooking(event)">
+                    <div class="booking-grid">
+                        <div class="form-group">
+                            <label>Voucher no.</label>
+                            <input type="text" id="voucherNo" class="form-control" placeholder="12234" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Client ID no.</label>
+                            <input type="text" id="clientID" class="form-control" placeholder="Enter Passport / ID" oninput="lookupClientInfo()" required>
+                            <span id="clientPreviewBadge" class="client-preview-badge"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Name (Auto-fetched)</label>
+                            <input type="text" id="customerName" class="form-control" placeholder="Auto-filled from Sheet1" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Nationality / Authority (Auto-fetched)</label>
+                            <input type="text" id="nationality" class="form-control" placeholder="Auto-filled from Sheet1" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Activity</label>
+                            <select id="activity" class="form-control" required>
+                                <option value="">Select activity</option>
+                                <option value="Diving">Diving</option>
+                                <option value="Snorkeling">Snorkeling</option>
+                                <option value="Speedboat">Speedboat</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Supplier</label>
+                            <input type="text" id="supplier" class="form-control" placeholder="Boat / operator">
+                        </div>
+                        <div class="form-group">
+                            <label>Guide</label>
+                            <input type="text" id="guide" class="form-control" placeholder="Assigned guide">
+                        </div>
+                        <div class="form-group">
+                            <label>Guests</label>
+                            <input type="number" id="guests" class="form-control" value="1" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="bookingDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Pick-up time</label>
+                            <input type="time" id="pickupTime" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Payment method</label>
+                            <select id="paymentMethod" class="form-control">
+                                <option value="USD Cash">USD Cash</option>
+                                <option value="EUR Credit">EUR Credit</option>
+                                <option value="Card">Card</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Total amount</label>
+                            <input type="number" id="totalAmount" class="form-control" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Paid amount</label>
+                            <input type="number" id="paidAmount" class="form-control" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <input type="text" id="notes" class="form-control" placeholder="Cert level, pick-up point...">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit" id="saveBookingBtn">Save booking</button>
+                        <button type="reset" class="btn-clear" onclick="resetBookingForm()">Clear form</button>
+                        <span id="bookingStatus" style="align-self: center; font-weight: 500;"></span>
+                    </div>
+                </form>
+            </div>
+
+            <div class="controls-bar">
+                <input type="text" id="search-booking" class="search-input" placeholder="🔍 Search Bookings..." oninput="filterBookings()">
+                <button class="btn-export" onclick="exportToExcel('bookings-table')">📊 Export CSV</button>
+            </div>
+
+            <div class="table-container">
+                <table id="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>Voucher</th>
+                            <th>Client ID</th>
+                            <th>Customer Name</th>
+                            <th>Nationality</th>
+                            <th>Activity</th>
+                            <th>Supplier</th>
+                            <th>Guide</th>
+                            <th>Time</th>
+                            <th>Payment</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Status</th>
+                            <th id="actionsHeader" style="display:none;">Manager Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-table-body">
+                        <tr><td colspan="13" class="empty-state">Loading bookings data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: ID & Licenses -->
+        <div id="id-licenses" class="tab-content">
+            <div class="header">
+                <div class="title-group">
+                    <h1>🪪 ID & License Management Dashboard</h1>
+                </div>
+                <button class="btn-refresh" onclick="loadData()">🔄 Refresh Data</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">Connection Status</div>
+                    <div class="stat-value" id="connection-status">Connecting...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Total Registered Clients</div>
+                    <div class="stat-value" id="total-records">0</div>
+                </div>
+            </div>
+
+            <div class="controls-bar">
+                <input type="text" id="search-input" class="search-input" placeholder="🔍 Search documents..." oninput="filterData()">
+                <button class="btn-export" onclick="exportToExcel('data-table')">📊 Export to Excel</button>
+            </div>
+
+            <div class="table-container">
+                <table id="data-table">
+                    <thead><tr id="table-header"></tr></thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="100%" class="empty-state">Loading documents data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx9SSGwYkL0G0nwKPq6wRubt0SvOfcNlpj8fSiTqeh889RzvCt5L5nFgEEeZe4xUYUQ/exec";
-
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxsgl4zAv9AYNClh4OJd1suQAg0N4pIGWw1SfNBtMbzIdNmzBi_ZKOd_Qu0GueIb7SerA/exec";
+        
+        let currentUser = null;
         let rawData = [];
         let rawBookingsData = [];
         let clientMap = {};
 
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const role = document.getElementById('userRole').value;
+
+            currentUser = { username, role };
+
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
+
+            document.getElementById('currentUserName').innerText = username;
+            const badge = document.getElementById('currentUserRoleBadge');
+            badge.innerText = role;
+            badge.className = `user-badge badge-${role}`;
+
+            // Show/Hide Manager Columns
+            if (role === 'manager') {
+                document.getElementById('actionsHeader').style.display = 'table-cell';
+            } else {
+                document.getElementById('actionsHeader').style.display = 'none';
+            }
+
+            loadData();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('appContent').style.display = 'none';
+        }
+
+        function switchTab(e, tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            e.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function lookupClientInfo() {
+            const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
+            const nameInput = document.getElementById('customerName');
+            const natInput = document.getElementById('nationality');
+            const badge = document.getElementById('clientPreviewBadge');
+
+            if (!clientIDInput) {
+                nameInput.value = '';
+                natInput.value = '';
+                badge.style.display = 'none';
+                return;
+            }
+
+            if (clientMap[clientIDInput]) {
+                const client = clientMap[clientIDInput];
+                nameInput.value = client.name || 'N/A';
+                natInput.value = client.nationality || 'N/A';
+                badge.style.color = "#4ade80";
+                badge.innerText = `✓ Found: ${client.name} (${client.nationality})`;
+                badge.style.display = 'block';
+            } else {
+                nameInput.value = '';
+                natInput.value = '';
+                badge.style.color = "#f87171";
+                badge.innerText = "❌ Client ID not registered in Sheet1";
+                badge.style.display = 'block';
+            }
+        }
+
+        function resetBookingForm() {
+            document.getElementById('bookingForm').reset();
+            document.getElementById('clientPreviewBadge').style.display = 'none';
+        }
+
+        async function submitBooking(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveBookingBtn');
+            const status = document.getElementById('bookingStatus');
+            const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
+
+            if (!clientMap[clientIDInput]) {
+                alert("⚠️ Client ID not found in ID & Licenses database (Sheet1)!");
+                return;
+            }
+
+            btn.disabled = true;
+            status.style.color = "#38bdf8";
+            status.innerText = "⏳ Saving booking...";
+
+            const payload = {
+                voucherNo: document.getElementById('voucherNo').value,
+                clientID: document.getElementById('clientID').value.trim(),
+                activity: document.getElementById('activity').value,
+                supplier: document.getElementById('supplier').value,
+                guide: document.getElementById('guide').value,
+                guests: document.getElementById('guests').value,
+                bookingDate: document.getElementById('bookingDate').value,
+                pickupTime: document.getElementById('pickupTime').value,
+                paymentMethod: document.getElementById('paymentMethod').value,
+                totalAmount: document.getElementById('totalAmount').value,
+                paidAmount: document.getElementById('paidAmount').value,
+                notes: document.getElementById('notes').value,
+                status: 'Pending'
+            };
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                status.style.color = "#4ade80";
+                status.innerText = "✅ Booking Saved (Pending Manager Approval)!";
+                
+                resetBookingForm();
+                setTimeout(() => status.innerText = "", 4000);
+                loadData();
+            } catch (err) {
+                status.style.color = "#f87171";
+                status.innerText = "❌ Error saving booking";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function updateBookingStatus(voucherNo, newStatus) {
+            if (!confirm(`Are you sure you want to mark Voucher #${voucherNo} as ${newStatus}?`)) return;
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'updateStatus',
+                        voucherNo: voucherNo,
+                        status: newStatus
+                    })
+                });
+
+                alert(`✅ Status updated to ${newStatus}`);
+                loadData();
+            } catch (err) {
+                alert("❌ Failed to update status");
+            }
+        }
+
         function loadData() {
             document.getElementById('connection-status').innerText = 'Loading...';
             
-            // جلب Sheet1 أولاً لبناء clientMap بشكل تسلسلي صحيح
             const oldScript1 = document.getElementById('jsonp-script1');
             if (oldScript1) oldScript1.remove();
-            
             const script1 = document.createElement('script');
             script1.id = 'jsonp-script1';
             script1.src = SCRIPT_URL + "?sheet=Sheet1&callback=callbackSheet1";
             document.body.appendChild(script1);
+
+            const oldScript2 = document.getElementById('jsonp-script2');
+            if (oldScript2) oldScript2.remove();
+            const script2 = document.createElement('script');
+            script2.id = 'jsonp-script2';
+            script2.src = SCRIPT_URL + "?sheet=Sheet2&callback=callbackSheet2";
+            document.body.appendChild(script2);
         }
 
         window.callbackSheet1 = function(data) {
             if (!data || data.length === 0) return;
             document.getElementById('connection-status').innerText = 'Connected 🟢';
+            document.getElementById('connection-status').className = 'stat-value status-connected';
             rawData = data;
             
             const headers = data[0].map(h => String(h).trim().toLowerCase());
@@ -376,103 +773,124 @@
                 }
             });
 
-            // بعد اكتمال جلب الشيت الأول وبناء الخريطة، يتم استدعاء الشيت الثاني فوراً
-            const oldScript2 = document.getElementById('jsonp-script2');
-            if (oldScript2) oldScript2.remove();
-
-            const script2 = document.createElement('script');
-            script2.id = 'jsonp-script2';
-            script2.src = SCRIPT_URL + "?sheet=Sheet2&callback=callbackSheet2";
-            document.body.appendChild(script2);
+            renderTable(rawData);
         };
 
         window.callbackSheet2 = function(data) {
             if (!data || data.length <= 1) {
-                document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="12" class="empty-state">No bookings recorded yet.</td></tr>';
+                document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
                 return;
             }
-            rawBookingsData = data.slice(1);
-            renderBookingsTable(rawBookingsData);
+            rawBookingsData = data;
+            renderBookingsTable(data.slice(1));
         };
 
         function renderBookingsTable(rows) {
             const tbody = document.getElementById('bookings-table-body');
-            if (!rows || rows.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="12" class="empty-state">No bookings recorded yet.</td></tr>';
-                return;
-            }
+            tbody.innerHTML = '';
+            
+            const isManager = currentUser && currentUser.role === 'manager';
 
-            tbody.innerHTML = rows.map(row => `
-                <tr>
-                    <td>${row[0] || ''}</td>
-                    <td>${row[1] || ''}</td>
+            rows.forEach(row => {
+                const voucher = row[0] || '';
+                const clientID = String(row[1] || '').trim();
+                const key = clientID.toLowerCase();
+                const clientInfo = clientMap[key] || { name: 'N/A', nationality: 'N/A' };
+
+                const status = row[11] || 'Pending';
+                const statusClass = `status-${status.toLowerCase()}`;
+
+                const tr = document.createElement('tr');
+                
+                let actionTd = '';
+                if (isManager) {
+                    actionTd = `
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">✓ Accept</button>
+                                <button class="btn-cancel" onclick="updateBookingStatus('${voucher}', 'Canceled')">✕ Cancel</button>
+                            </div>
+                        </td>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td>${voucher}</td>
+                    <td><strong>${clientID}</strong></td>
+                    <td>${clientInfo.name}</td>
+                    <td>${clientInfo.nationality}</td>
                     <td>${row[2] || ''}</td>
                     <td>${row[3] || ''}</td>
                     <td>${row[4] || ''}</td>
-                    <td>${row[5] || ''}</td>
-                    <td>${row[6] || ''}</td>
                     <td>${row[7] || ''}</td>
                     <td>${row[8] || ''}</td>
-                    <td>${row[9] || ''}</td>
-                    <td>${row[10] || ''}</td>
-                    <td>${row[11] || 'Pending'}</td>
-                </tr>
-            `).join('');
-        }
-
-        // Auto-fetch client details when typing Client ID
-        document.getElementById('clientId').addEventListener('input', function() {
-            const inputId = this.value.trim().toLowerCase();
-            if (clientMap[inputId]) {
-                document.getElementById('customerName').value = clientMap[inputId].name;
-                document.getElementById('nationality').value = clientMap[inputId].nationality;
-            } else {
-                document.getElementById('customerName').value = '';
-                document.getElementById('nationality').value = '';
-            }
-        });
-
-        function saveBooking() {
-            alert('Booking saved successfully (Demo)');
-        }
-
-        function clearForm() {
-            document.getElementById('clientId').value = '';
-            document.getElementById('customerName').value = '';
-            document.getElementById('nationality').value = '';
-            document.getElementById('supplier').value = '';
-            document.getElementById('guide').value = '';
-            document.getElementById('totalAmount').value = '0.00';
-            document.getElementById('paidAmount').value = '0.00';
-            document.getElementById('notes').value = '';
+                    <td>$${row[9] || '0'}</td>
+                    <td>$${row[10] || '0'}</td>
+                    <td><span class="status-badge ${statusClass}">${status}</span></td>
+                    ${actionTd}
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         function filterBookings() {
-            const query = document.getElementById('searchBookings').value.toLowerCase();
-            const filtered = rawBookingsData.filter(row => 
-                row.some(cell => String(cell).toLowerCase().includes(query))
-            );
+            const query = document.getElementById('search-booking').value.toLowerCase().trim();
+            if (!query) {
+                renderBookingsTable(rawBookingsData.slice(1));
+                return;
+            }
+            const filtered = rawBookingsData.slice(1).filter(row => {
+                const clientID = String(row[1] || '').toLowerCase();
+                const clientInfo = clientMap[clientID] || { name: '', nationality: '' };
+                
+                return row.some(cell => String(cell).toLowerCase().includes(query)) ||
+                       clientInfo.name.toLowerCase().includes(query) ||
+                       clientInfo.nationality.toLowerCase().includes(query);
+            });
             renderBookingsTable(filtered);
         }
 
-        function exportCSV() {
-            let csvContent = "data:text/csv;charset=utf-8,";
-            rawBookingsData.forEach(row => {
-                csvContent += row.join(",") + "\r\n";
-            });
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "bookings_export.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function filterData() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            if (!query) {
+                renderTable(rawData);
+                return;
+            }
+            const headers = rawData[0];
+            const filteredRows = rawData.slice(1).filter(row =>
+                row.some(cell => String(cell).toLowerCase().includes(query))
+            );
+            renderTable([headers, ...filteredRows]);
         }
 
-        // تنفيذ عملية الجلب عند تحميل الصفحة
-        window.onload = function() {
-            loadData();
-        };
+        function renderTable(data) {
+            const headerRow = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
+            if (data.length === 0) return;
+
+            const headers = data[0];
+            headerRow.innerHTML = '<th>#</th>';
+            headers.forEach(h => headerRow.innerHTML += `<th>${h}</th>`);
+
+            const rows = data.slice(1);
+            document.getElementById('total-records').innerText = rows.length;
+            tableBody.innerHTML = '';
+            rows.forEach((row, index) => {
+                let tr = '<tr>';
+                tr += `<td>${index + 1}</td>`;
+                row.forEach(cell => tr += `<td>${cell || ''}</td>`);
+                tr += '</tr>';
+                tableBody.innerHTML += tr;
+            });
+        }
+
+        function exportToExcel(tableId) {
+            const table = document.getElementById(tableId);
+            const workbook = XLSX.utils.table_to_book(table);
+            XLSX.writeFile(workbook, `Export_${tableId}.xlsx`);
+        }
+
+        document.getElementById('bookingDate').valueAsDate = new Date();
     </script>
 </body>
 </html>
