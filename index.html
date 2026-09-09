@@ -175,6 +175,20 @@
             border-color: #38bdf8;
         }
 
+        .form-control[readonly] {
+            background-color: #1e293b;
+            color: #38bdf8;
+            font-weight: bold;
+            cursor: not-allowed;
+        }
+
+        .client-preview-badge {
+            font-size: 0.85rem;
+            color: #4ade80;
+            margin-top: 4px;
+            display: none;
+        }
+
         .form-actions {
             display: flex;
             gap: 12px;
@@ -319,8 +333,8 @@
 
     <!-- Tab Navigation Bar -->
     <div class="tab-navigation">
-        <button class="tab-btn active" onclick="switchTab('daily-operations')">Daily Operations</button>
-        <button class="tab-btn" onclick="switchTab('id-licenses')">ID & Licenses</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'daily-operations')">Daily Operations</button>
+        <button class="tab-btn" onclick="switchTab(event, 'id-licenses')">ID & Licenses</button>
     </div>
 
     <!-- TAB 1: Daily Operations -->
@@ -335,19 +349,20 @@
                     </div>
                     <div class="form-group">
                         <label>Client ID no.</label>
-                        <input type="text" id="clientID" class="form-control" placeholder="Passport / national ID">
+                        <input type="text" id="clientID" class="form-control" placeholder="Enter Passport / ID" oninput="lookupClientInfo()" required>
+                        <span id="clientPreviewBadge" class="client-preview-badge"></span>
                     </div>
                     <div class="form-group">
-                        <label>Customer name</label>
-                        <input type="text" id="customerName" class="form-control" placeholder="Full name as on ID" required>
+                        <label>Customer Name (Auto-fetched)</label>
+                        <input type="text" id="customerName" class="form-control" placeholder="Auto-filled from Sheet1" readonly>
                     </div>
                     <div class="form-group">
-                        <label>Nationality</label>
-                        <input type="text" id="nationality" class="form-control" placeholder="Egypt">
+                        <label>Nationality (Auto-fetched)</label>
+                        <input type="text" id="nationality" class="form-control" placeholder="Auto-filled from Sheet1" readonly>
                     </div>
                     <div class="form-group">
                         <label>Activity</label>
-                        <select id="activity" class="form-control">
+                        <select id="activity" class="form-control" required>
                             <option value="">Select activity</option>
                             <option value="Diving">Diving</option>
                             <option value="Snorkeling">Snorkeling</option>
@@ -398,7 +413,7 @@
 
                 <div class="form-actions">
                     <button type="submit" class="btn-submit" id="saveBookingBtn">Save booking</button>
-                    <button type="reset" class="btn-clear">Clear form</button>
+                    <button type="reset" class="btn-clear" onclick="resetBookingForm()">Clear form</button>
                     <span id="bookingStatus" style="align-self: center; font-weight: 500;"></span>
                 </div>
             </form>
@@ -414,8 +429,9 @@
                 <thead>
                     <tr>
                         <th>Voucher</th>
-                        <th>Customer</th>
                         <th>Client ID</th>
+                        <th>Customer Name</th>
+                        <th>Nationality</th>
                         <th>Activity</th>
                         <th>Supplier</th>
                         <th>Guide</th>
@@ -426,7 +442,7 @@
                     </tr>
                 </thead>
                 <tbody id="bookings-table-body">
-                    <tr><td colspan="10" class="empty-state">Loading bookings data...</td></tr>
+                    <tr><td colspan="11" class="empty-state">Loading bookings data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -447,7 +463,7 @@
                 <div class="stat-value" id="connection-status">Connecting...</div>
             </div>
             <div class="stat-card">
-                <div class="stat-title">Total Records</div>
+                <div class="stat-title">Total Registered Clients</div>
                 <div class="stat-value" id="total-records">0</div>
             </div>
         </div>
@@ -480,30 +496,80 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBAFTsyRTu0lL5VfUL9P7XLl_jR7dexGy_FKXEfnc1Z-kozZpwezhi4xNvayA6DrhsZQ/exec";
         const N8N_WEBHOOK_URL = "https://Automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
         
-        let rawData = [];
-        let rawBookingsData = [];
+        let rawData = []; // Data from Sheet1
+        let rawBookingsData = []; // Data from Sheet2
+        let clientMap = {}; // Dictionary mapping Client ID -> { name, nationality }
 
-        function switchTab(tabId) {
+        function switchTab(e, tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            event.target.classList.add('active');
+            e.target.classList.add('active');
             document.getElementById(tabId).classList.add('active');
+        }
+
+        // Lookup Client Info dynamically as user types Client ID
+        function lookupClientInfo() {
+            const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
+            const nameInput = document.getElementById('customerName');
+            const natInput = document.getElementById('nationality');
+            const badge = document.getElementById('clientPreviewBadge');
+
+            if (!clientIDInput) {
+                nameInput.value = '';
+                natInput.value = '';
+                badge.style.display = 'none';
+                return;
+            }
+
+            if (clientMap[clientIDInput]) {
+                const client = clientMap[clientIDInput];
+                nameInput.value = client.name || 'N/A';
+                natInput.value = client.nationality || 'N/A';
+                badge.style.color = "#4ade80";
+                badge.innerText = `✓ Found: ${client.name} (${client.nationality})`;
+                badge.style.display = 'block';
+            } else {
+                nameInput.value = '';
+                natInput.value = '';
+                badge.style.color = "#f87171";
+                badge.innerText = "❌ Client ID not registered in Sheet1";
+                badge.style.display = 'block';
+            }
+        }
+
+        function resetBookingForm() {
+            document.getElementById('bookingForm').reset();
+            document.getElementById('clientPreviewBadge').style.display = 'none';
         }
 
         async function submitBooking(e) {
             e.preventDefault();
             const btn = document.getElementById('saveBookingBtn');
             const status = document.getElementById('bookingStatus');
+            const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
+
+            if (!clientIDInput) {
+                alert("⚠️ Please enter a Client ID / Passport number.");
+                return;
+            }
+
+            // Verify if Client ID exists in Sheet1 Map
+            if (!clientMap[clientIDInput]) {
+                status.style.color = "#f87171";
+                status.innerText = "❌ Client ID not found! Upload passport/ID first in (ID & Licenses) tab.";
+                alert("⚠️ Client ID not found in ID & Licenses database (Sheet1)!\n\nPlease upload the client's Passport/ID document first under the 'ID & Licenses' tab before saving this booking.");
+                return;
+            }
+
             btn.disabled = true;
             status.style.color = "#38bdf8";
-            status.innerText = "⏳ Saving to Sheet2...";
+            status.innerText = "⏳ Saving booking to Sheet2...";
 
+            // Payload only sends necessary booking fields + Client ID
             const payload = {
                 voucherNo: document.getElementById('voucherNo').value,
-                clientID: document.getElementById('clientID').value,
-                customerName: document.getElementById('customerName').value,
-                nationality: document.getElementById('nationality').value,
+                clientID: document.getElementById('clientID').value.trim(),
                 activity: document.getElementById('activity').value,
                 supplier: document.getElementById('supplier').value,
                 guide: document.getElementById('guide').value,
@@ -525,37 +591,17 @@
                 });
 
                 status.style.color = "#4ade80";
-                status.innerText = "✅ Saved Successfully!";
+                status.innerText = "✅ Booking Saved Successfully!";
                 
-                addBookingToTable(payload);
-                document.getElementById('bookingForm').reset();
-                setTimeout(() => status.innerText = "", 3000);
+                resetBookingForm();
+                setTimeout(() => status.innerText = "", 4000);
+                loadData(); // Refresh table
             } catch (err) {
                 status.style.color = "#f87171";
                 status.innerText = "❌ Error saving booking";
             } finally {
                 btn.disabled = false;
             }
-        }
-
-        function addBookingToTable(data) {
-            const tbody = document.getElementById('bookings-table-body');
-            if (tbody.querySelector('.empty-state')) tbody.innerHTML = '';
-            
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${data.voucherNo}</td>
-                <td>${data.customerName}<br><small style="color:#94a3b8">${data.nationality}</small></td>
-                <td>${data.clientID}</td>
-                <td>${data.activity}</td>
-                <td>${data.supplier}</td>
-                <td>${data.guide}</td>
-                <td>${data.pickupTime}</td>
-                <td>${data.paymentMethod}</td>
-                <td>$${data.totalAmount}</td>
-                <td>$${data.paidAmount}</td>
-            `;
-            tbody.prepend(tr);
         }
 
         function loadData() {
@@ -583,12 +629,26 @@
             document.getElementById('connection-status').innerText = 'Connected 🟢';
             document.getElementById('connection-status').className = 'stat-value status-connected';
             rawData = data;
+            
+            // Build Client Map lookup dictionary from Sheet1
+            // Assuming Sheet1 structure: Column A = Client ID, Column B = Name, Column C = Nationality
+            clientMap = {};
+            data.slice(1).forEach(row => {
+                const id = String(row[0] || '').trim().toLowerCase();
+                if (id) {
+                    clientMap[id] = {
+                        name: row[1] || 'Unknown',
+                        nationality: row[2] || 'Unknown'
+                    };
+                }
+            });
+
             renderTable(rawData);
         };
 
         window.callbackSheet2 = function(data) {
             if (!data || data.length <= 1) {
-                document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="10" class="empty-state">No bookings recorded yet.</td></tr>';
+                document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="11" class="empty-state">No bookings recorded yet.</td></tr>';
                 return;
             }
             rawBookingsData = data;
@@ -599,18 +659,26 @@
             const tbody = document.getElementById('bookings-table-body');
             tbody.innerHTML = '';
             rows.forEach(row => {
+                const voucher = row[0] || '';
+                const clientID = String(row[1] || '').trim();
+                const key = clientID.toLowerCase();
+
+                // Lookup client details from Sheet1 dictionary using Client ID
+                const clientInfo = clientMap[key] || { name: 'N/A (Not Found)', nationality: 'N/A' };
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${row[0] || ''}</td>
-                    <td>${row[2] || ''}<br><small style="color:#94a3b8">${row[3] || ''}</small></td>
-                    <td>${row[1] || ''}</td>
+                    <td>${voucher}</td>
+                    <td><strong>${clientID}</strong></td>
+                    <td>${clientInfo.name}</td>
+                    <td>${clientInfo.nationality}</td>
+                    <td>${row[2] || ''}</td>
+                    <td>${row[3] || ''}</td>
                     <td>${row[4] || ''}</td>
-                    <td>${row[5] || ''}</td>
-                    <td>${row[6] || ''}</td>
-                    <td>${row[9] || ''}</td>
-                    <td>${row[10] || ''}</td>
-                    <td>$${row[11] || '0'}</td>
-                    <td>$${row[12] || '0'}</td>
+                    <td>${row[7] || ''}</td>
+                    <td>${row[8] || ''}</td>
+                    <td>$${row[9] || '0'}</td>
+                    <td>$${row[10] || '0'}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -622,10 +690,28 @@
                 renderBookingsTable(rawBookingsData.slice(1));
                 return;
             }
-            const filtered = rawBookingsData.slice(1).filter(row => 
+            const filtered = rawBookingsData.slice(1).filter(row => {
+                const clientID = String(row[1] || '').toLowerCase();
+                const clientInfo = clientMap[clientID] || { name: '', nationality: '' };
+                
+                return row.some(cell => String(cell).toLowerCase().includes(query)) ||
+                       clientInfo.name.toLowerCase().includes(query) ||
+                       clientInfo.nationality.toLowerCase().includes(query);
+            });
+            renderBookingsTable(filtered);
+        }
+
+        function filterData() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            if (!query) {
+                renderTable(rawData);
+                return;
+            }
+            const headers = rawData[0];
+            const filteredRows = rawData.slice(1).filter(row =>
                 row.some(cell => String(cell).toLowerCase().includes(query))
             );
-            renderBookingsTable(filtered);
+            renderTable([headers, ...filteredRows]);
         }
 
         function renderTable(data) {
