@@ -357,7 +357,7 @@
                         <input type="text" id="customerName" class="form-control" placeholder="Auto-filled from Sheet1" readonly>
                     </div>
                     <div class="form-group">
-                        <label>Nationality (Auto-fetched)</label>
+                        <label>Nationality / Issuing Authority (Auto-fetched)</label>
                         <input type="text" id="nationality" class="form-control" placeholder="Auto-filled from Sheet1" readonly>
                     </div>
                     <div class="form-group">
@@ -496,9 +496,9 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBAFTsyRTu0lL5VfUL9P7XLl_jR7dexGy_FKXEfnc1Z-kozZpwezhi4xNvayA6DrhsZQ/exec";
         const N8N_WEBHOOK_URL = "https://Automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
         
-        let rawData = []; // Data from Sheet1
-        let rawBookingsData = []; // Data from Sheet2
-        let clientMap = {}; // Dictionary mapping Client ID -> { name, nationality }
+        let rawData = [];
+        let rawBookingsData = [];
+        let clientMap = {};
 
         function switchTab(e, tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -508,7 +508,6 @@
             document.getElementById(tabId).classList.add('active');
         }
 
-        // Lookup Client Info dynamically as user types Client ID
         function lookupClientInfo() {
             const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
             const nameInput = document.getElementById('customerName');
@@ -554,7 +553,6 @@
                 return;
             }
 
-            // Verify if Client ID exists in Sheet1 Map
             if (!clientMap[clientIDInput]) {
                 status.style.color = "#f87171";
                 status.innerText = "❌ Client ID not found! Upload passport/ID first in (ID & Licenses) tab.";
@@ -566,7 +564,6 @@
             status.style.color = "#38bdf8";
             status.innerText = "⏳ Saving booking to Sheet2...";
 
-            // Payload only sends necessary booking fields + Client ID
             const payload = {
                 voucherNo: document.getElementById('voucherNo').value,
                 clientID: document.getElementById('clientID').value.trim(),
@@ -595,7 +592,7 @@
                 
                 resetBookingForm();
                 setTimeout(() => status.innerText = "", 4000);
-                loadData(); // Refresh table
+                loadData();
             } catch (err) {
                 status.style.color = "#f87171";
                 status.innerText = "❌ Error saving booking";
@@ -607,7 +604,6 @@
         function loadData() {
             document.getElementById('connection-status').innerText = 'Loading...';
             
-            // Fetch Sheet1 (ID Data)
             const oldScript1 = document.getElementById('jsonp-script1');
             if (oldScript1) oldScript1.remove();
             const script1 = document.createElement('script');
@@ -615,7 +611,6 @@
             script1.src = SCRIPT_URL + "?sheet=Sheet1&callback=callbackSheet1";
             document.body.appendChild(script1);
 
-            // Fetch Sheet2 (Bookings Data)
             const oldScript2 = document.getElementById('jsonp-script2');
             if (oldScript2) oldScript2.remove();
             const script2 = document.createElement('script');
@@ -630,15 +625,25 @@
             document.getElementById('connection-status').className = 'stat-value status-connected';
             rawData = data;
             
-            // Build Client Map lookup dictionary from Sheet1
-            // Assuming Sheet1 structure: Column A = Client ID, Column B = Name, Column C = Nationality
+            // Map headers dynamically to match columns in Sheet1
+            const headers = data[0].map(h => String(h).trim().toLowerCase());
+            
+            const idIndex = headers.indexOf('id_number');
+            const nameIndex = headers.indexOf('full_name');
+            const authorityIndex = headers.indexOf('issuing_authority');
+
             clientMap = {};
             data.slice(1).forEach(row => {
-                const id = String(row[0] || '').trim().toLowerCase();
+                const rawId = idIndex !== -1 ? row[idIndex] : (row[3] || row[0]);
+                const id = String(rawId || '').trim().toLowerCase();
+                
+                const name = nameIndex !== -1 ? row[nameIndex] : row[0];
+                const authority = authorityIndex !== -1 ? row[authorityIndex] : (row[2] || 'N/A');
+
                 if (id) {
                     clientMap[id] = {
-                        name: row[1] || 'Unknown',
-                        nationality: row[2] || 'Unknown'
+                        name: name || 'Unknown',
+                        nationality: authority || 'N/A'
                     };
                 }
             });
@@ -663,7 +668,6 @@
                 const clientID = String(row[1] || '').trim();
                 const key = clientID.toLowerCase();
 
-                // Lookup client details from Sheet1 dictionary using Client ID
                 const clientInfo = clientMap[key] || { name: 'N/A (Not Found)', nationality: 'N/A' };
 
                 const tr = document.createElement('tr');
