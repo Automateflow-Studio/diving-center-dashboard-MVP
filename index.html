@@ -3,322 +3,433 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking & Client Management Dashboard</title>
+    <title>Daily Operations - Booking Dashboard</title>
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
+            --bg-dark: #0b132b;
+            --card-bg: #1c2541;
+            --input-bg: #0b132b;
+            --text-main: #ffffff;
+            --text-muted: #8d99ae;
+            --accent-blue: #0077b6;
+            --accent-green: #06d6a0;
+            --border-color: #3a506b;
+            --danger-red: #ef233c;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             margin: 0;
             padding: 20px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
         }
 
-        h1, h2 {
-            color: #0f172a;
+        /* Top Nav Tabs */
+        .tabs-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
-        .grid {
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .tab-btn.active {
+            background-color: #0077b6;
+            color: #ffffff;
+        }
+
+        /* Forms Panel */
+        .panel-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border: 1px solid var(--border);
-        }
-
-        .form-group {
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
             margin-bottom: 15px;
         }
 
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group.col-2 {
+            grid-column: span 2;
+        }
+
         label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 5px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
         }
 
         input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: #ffffff;
+            padding: 8px 12px;
             border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            outline: none;
         }
 
-        button {
-            background-color: var(--primary);
-            color: white;
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-blue);
+        }
+
+        input[readonly] {
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .validation-msg {
+            color: var(--danger-red);
+            font-size: 0.7rem;
+            display: none;
+            margin-top: 2px;
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-submit {
+            background-color: #00b4d8;
+            color: #ffffff;
             border: none;
-            padding: 10px 18px;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-clear {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px 18px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: 600;
-            width: 100%;
-            transition: background 0.2s;
         }
 
-        button:hover {
-            background-color: var(--primary-hover);
+        /* Search & Export Bar */
+        .controls-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+
+        .search-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            background-color: var(--card-bg);
+        }
+
+        .btn-export {
+            background-color: var(--accent-green);
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Data Table */
+        .table-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
-            background: var(--card-bg);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        th, td {
-            padding: 12px 15px;
+            font-size: 0.8rem;
             text-align: left;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.875rem;
         }
 
         th {
-            background-color: #f1f5f9;
-            font-weight: 600;
-        }
-
-        .table-container {
-            overflow-x: auto;
-        }
-
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
+            background-color: #0b132b;
+            color: var(--text-muted);
+            padding: 12px 15px;
             font-weight: bold;
-            background: #e2e8f0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(58, 80, 107, 0.4);
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Booking Management Dashboard</h1>
-
-    <div class="grid">
-        <!-- Form 1: Add Client -->
-        <div class="card">
-            <h2>Add New Client</h2>
-            <form id="client-form" onsubmit="submitClient(event)">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="c-name" required>
-                </div>
-                <div class="form-group">
-                    <label>Phone</label>
-                    <input type="text" id="c-phone" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="c-email">
-                </div>
-                <div class="form-group">
-                    <label>Nationality</label>
-                    <input type="text" id="c-nationality">
-                </div>
-                <div class="form-group">
-                    <label>Hotel</label>
-                    <input type="text" id="c-hotel">
-                </div>
-                <button type="submit" id="btn-client">Save Client</button>
-            </form>
-        </div>
-
-        <!-- Form 2: Add Booking -->
-        <div class="card">
-            <h2>Add New Booking</h2>
-            <form id="booking-form" onsubmit="submitBooking(event)">
-                <div class="form-group">
-                    <label>Voucher Number</label>
-                    <input type="text" id="b-voucher" required>
-                </div>
-                <div class="form-group">
-                    <label>Select Client ID</label>
-                    <select id="b-client-id" required>
-                        <option value="">-- Select Client --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Activity</label>
-                    <input type="text" id="b-activity" required>
-                </div>
-                <div class="form-group" style="display: flex; gap: 10px;">
-                    <div>
-                        <label>Supplier</label>
-                        <input type="text" id="b-supplier">
-                    </div>
-                    <div>
-                        <label>Guide</label>
-                        <input type="text" id="b-guide">
-                    </div>
-                </div>
-                <div class="form-group" style="display: flex; gap: 10px;">
-                    <div>
-                        <label>Date</label>
-                        <input type="date" id="b-date" required>
-                    </div>
-                    <div>
-                        <label>Pickup Time</label>
-                        <input type="time" id="b-time" required>
-                    </div>
-                </div>
-                <div class="form-group" style="display: flex; gap: 10px;">
-                    <div>
-                        <label>Guests</label>
-                        <input type="number" id="b-guests" value="1">
-                    </div>
-                    <div>
-                        <label>Payment Method</label>
-                        <select id="b-payment">
-                            <option value="Cash">Cash</option>
-                            <option value="Card">Card</option>
-                            <option value="Transfer">Transfer</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group" style="display: flex; gap: 10px;">
-                    <div>
-                        <label>Total ($)</label>
-                        <input type="number" id="b-total" step="0.01" required>
-                    </div>
-                    <div>
-                        <label>Paid ($)</label>
-                        <input type="number" id="b-paid" step="0.01" value="0">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Notes</label>
-                    <textarea id="b-notes" rows="2"></textarea>
-                </div>
-                <button type="submit" id="btn-booking">Save Booking</button>
-            </form>
-        </div>
+    <!-- Top Navigation Tabs -->
+    <div class="tabs-header">
+        <button class="tab-btn active">Daily Operations</button>
+        <button class="tab-btn">ID & Licenses</button>
     </div>
 
-    <!-- Table Section -->
-    <div class="card">
-        <h2>Recent Bookings List</h2>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Voucher</th>
-                        <th>Client ID</th>
-                        <th>Client Name</th>
-                        <th>Nationality</th>
-                        <th>Activity</th>
-                        <th>Supplier</th>
-                        <th>Guide</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Payment</th>
-                        <th>Total</th>
-                        <th>Paid</th>
-                    </tr>
-                </thead>
-                <tbody id="bookings-table-body">
-                    <tr><td colspan="12" style="text-align:center;">Loading data...</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <!-- Booking Form Card -->
+    <div class="panel-card">
+        <div class="panel-title">📜 New Booking</div>
+        
+        <form id="booking-form" onsubmit="saveBooking(event)">
+            <!-- Row 1 -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Voucher no.</label>
+                    <input type="text" id="b-voucher" placeholder="12234" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Client ID no.</label>
+                    <input type="text" id="b-client-id" placeholder="S569-526-89-901-7" oninput="autoFetchClient(this.value)" required>
+                    <span id="client-error" class="validation-msg">❌ Client ID not registered in Sheet1</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Customer Name (Auto-fetched)</label>
+                    <input type="text" id="b-client-name" placeholder="Auto-filled from Sheet1" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Nationality (Auto-fetched)</label>
+                    <input type="text" id="b-nationality" placeholder="Auto-filled from Sheet1" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Activity</label>
+                    <select id="b-activity" required>
+                        <option value="">Select activity</option>
+                        <option value="Diving">Diving</option>
+                        <option value="Boat Trip">Boat Trip</option>
+                        <option value="Safari">Safari</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Supplier</label>
+                    <input type="text" id="b-supplier" placeholder="Boat / operator">
+                </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Guide</label>
+                    <input type="text" id="b-guide" placeholder="Assigned guide">
+                </div>
+
+                <div class="form-group">
+                    <label>Guests</label>
+                    <input type="number" id="b-guests" value="1" min="1">
+                </div>
+
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="b-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Pick-up time</label>
+                    <input type="time" id="b-time" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment method</label>
+                    <select id="b-payment">
+                        <option value="USD Cash">USD Cash</option>
+                        <option value="Card">Card</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Total amount</label>
+                    <input type="number" id="b-total" step="0.01" value="0.00" required>
+                </div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Paid amount</label>
+                    <input type="number" id="b-paid" step="0.01" value="0.00">
+                </div>
+
+                <div class="form-group col-2">
+                    <label>Notes</label>
+                    <input type="text" id="b-notes" placeholder="Cert level, pick-up point...">
+                </div>
+            </div>
+
+            <div class="actions-row">
+                <button type="submit" class="btn-submit" id="btn-save">Save booking</button>
+                <button type="button" class="btn-clear" onclick="resetForm()">Clear form</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Search and Export Controls -->
+    <div class="controls-bar">
+        <input type="text" id="search-input" class="search-input" placeholder="🔍 Search Bookings..." oninput="filterBookings()">
+        <button class="btn-export" onclick="exportToCSV()">📊 Export CSV</button>
+    </div>
+
+    <!-- Bookings Table -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>VOUCHER</th>
+                    <th>CLIENT ID</th>
+                    <th>CUSTOMER NAME</th>
+                    <th>NATIONALITY</th>
+                    <th>ACTIVITY</th>
+                    <th>SUPPLIER</th>
+                    <th>GUIDE</th>
+                    <th>TIME</th>
+                    <th>PAYMENT</th>
+                    <th>TOTAL</th>
+                    <th>PAID</th>
+                </tr>
+            </thead>
+            <tbody id="bookings-table-body">
+                <tr><td colspan="11" class="empty-state">No bookings recorded yet.</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
 <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzM_g1qI-jPcC81KxgAttsiUy3hLc1P8PpkLz-5cuXYvWTK1yk6z9toRRNbjWsNiXW0/exec';
 
-    let clientMap = {};
+    let allClients = {};
+    let allBookings = [];
 
-    async function loadData() {
+    // 1. Fetch data on load
+    async function initDashboard() {
         try {
-            const response = await fetch(SCRIPT_URL);
-            const data = await response.json();
+            const res = await fetch(SCRIPT_URL);
+            const data = await res.json();
 
-            clientMap = {};
-            const clientSelect = document.getElementById('b-client-id');
-            clientSelect.innerHTML = '<option value="">-- Select Client --</option>';
-
+            // Build client lookup map
+            allClients = {};
             if (data.clients) {
                 data.clients.forEach(c => {
-                    const id = String(c[0]).trim();
-                    const name = c[1] || '';
-                    const nationality = c[4] || 'N/A';
-
-                    clientMap[id.toLowerCase()] = { name, nationality };
-
-                    const opt = document.createElement('option');
-                    opt.value = id;
-                    opt.textContent = `${id} - ${name}`;
-                    clientSelect.appendChild(opt);
+                    const id = String(c[0] || '').trim();
+                    allClients[id.toLowerCase()] = {
+                        name: c[1] || '',
+                        nationality: c[4] || ''
+                    };
                 });
             }
 
-            renderBookingsTable(data.bookings || []);
-
-        } catch (err) {
-            console.error('Error fetching data:', err);
-            alert('Failed to load data from Google Sheets.');
+            allBookings = data.bookings || [];
+            renderTable(allBookings);
+        } catch (e) {
+            console.error("Data load error:", e);
         }
     }
 
-    // التنظيف ومعالجة الفهارس لحل مشكلة إزاحة الأعمدة بالتحديد
-    function renderBookingsTable(rows) {
+    // 2. Auto-fetch client name & nationality on ID typing
+    function autoFetchClient(val) {
+        const cleanID = val.trim().toLowerCase();
+        const errSpan = document.getElementById('client-error');
+        const nameInput = document.getElementById('b-client-name');
+        const natInput = document.getElementById('b-nationality');
+
+        if (!cleanID) {
+            errSpan.style.display = 'none';
+            nameInput.value = '';
+            natInput.value = '';
+            return;
+        }
+
+        if (allClients[cleanID]) {
+            errSpan.style.display = 'none';
+            nameInput.value = allClients[cleanID].name;
+            natInput.value = allClients[cleanID].nationality;
+        } else {
+            errSpan.style.display = 'block';
+            nameInput.value = '';
+            natInput.value = '';
+        }
+    }
+
+    // 3. Render Bookings - Fixed Index Mapping Solution
+    function renderTable(rows) {
         const tbody = document.getElementById('bookings-table-body');
         tbody.innerHTML = '';
 
         if (!rows || rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;">No bookings found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="empty-state">No bookings recorded yet.</td></tr>';
             return;
         }
 
         rows.forEach(row => {
             const voucher = row[0] || '';
             const clientID = String(row[1] || '').trim();
-            const key = clientID.toLowerCase();
+            const clientInfo = allClients[clientID.toLowerCase()] || { name: 'N/A', nationality: 'N/A' };
 
-            const clientInfo = clientMap[key] || { name: 'N/A', nationality: 'N/A' };
-
-            // تنظيف التاريخ
-            let rawDate = String(row[6] || '');
-            if (rawDate.includes('T')) rawDate = rawDate.split('T')[0];
-
-            // تنظيف الوقت ومنع ظهور 1899-12-30
-            let rawTime = String(row[7] || '');
-            if (rawTime.includes('T')) {
-                const timePart = rawTime.split('T')[1];
-                rawTime = timePart ? timePart.substring(0, 5) : rawTime;
+            // Extract pickup time formatted safely
+            let pickupTime = String(row[7] || '');
+            if (pickupTime.includes('T')) {
+                const parts = pickupTime.split('T')[1];
+                pickupTime = parts ? parts.substring(0, 5) : pickupTime;
             }
 
             const tr = document.createElement('tr');
@@ -327,53 +438,22 @@
                 <td>${clientID}</td>
                 <td>${clientInfo.name}</td>
                 <td>${clientInfo.nationality}</td>
-                <td>${row[2] || ''}</td>
-                <td>${row[3] || ''}</td>
-                <td>${row[4] || ''}</td>
-                <td>${rawDate}</td>
-                <td>${rawTime}</td>
-                <td>${row[8] || ''}</td>
-                <td>$${row[9] || '0'}</td>
-                <td>$${row[10] || '0'}</td>
+                <td>${row[2] || ''}</td>  <!-- Activity -->
+                <td>${row[3] || ''}</td>  <!-- Supplier -->
+                <td>${row[4] || ''}</td>  <!-- Guide -->
+                <td>${pickupTime}</td>    <!-- Pickup Time -->
+                <td>${row[8] || ''}</td>  <!-- Payment Method -->
+                <td>$${row[9] || '0'}</td> <!-- Total -->
+                <td>$${row[10] || '0'}</td><!-- Paid -->
             `;
             tbody.appendChild(tr);
         });
     }
 
-    async function submitClient(e) {
+    // 4. Save Booking Function
+    async function saveBooking(e) {
         e.preventDefault();
-        const btn = document.getElementById('btn-client');
-        btn.disabled = true;
-        btn.innerText = 'Saving...';
-
-        const payload = {
-            action: 'addClient',
-            fullName: document.getElementById('c-name').value,
-            phone: document.getElementById('c-phone').value,
-            email: document.getElementById('c-email').value,
-            nationality: document.getElementById('c-nationality').value,
-            hotel: document.getElementById('c-hotel').value
-        };
-
-        try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-            document.getElementById('client-form').reset();
-            await loadData();
-            alert('Client added successfully!');
-        } catch (err) {
-            alert('Error adding client!');
-        } finally {
-            btn.disabled = false;
-            btn.innerText = 'Save Client';
-        }
-    }
-
-    async function submitBooking(e) {
-        e.preventDefault();
-        const btn = document.getElementById('btn-booking');
+        const btn = document.getElementById('btn-save');
         btn.disabled = true;
         btn.innerText = 'Saving...';
 
@@ -395,23 +475,33 @@
         };
 
         try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-            document.getElementById('booking-form').reset();
-            await loadData();
-            alert('Booking created successfully!');
+            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+            resetForm();
+            await initDashboard();
         } catch (err) {
-            alert('Error adding booking!');
+            alert("Error saving booking");
         } finally {
             btn.disabled = false;
-            btn.innerText = 'Save Booking';
+            btn.innerText = 'Save booking';
         }
     }
 
-    loadData();
-</script>
+    // 5. Search Filter
+    function filterBookings() {
+        const query = document.getElementById('search-input').value.toLowerCase();
+        const filtered = allBookings.filter(r => {
+            const str = r.join(' ').toLowerCase();
+            return str.includes(query);
+        });
+        renderTable(filtered);
+    }
 
+    function resetForm() {
+        document.getElementById('booking-form').reset();
+        document.getElementById('client-error').style.display = 'none';
+    }
+
+    initDashboard();
+</script>
 </body>
 </html>
