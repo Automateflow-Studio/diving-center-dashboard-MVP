@@ -1,371 +1,946 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Executive Analytics Dashboard</title>
-  <!-- Chart.js for Rendering Charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    :root {
-      --bg-dark: #0f172a;
-      --card-bg: #1e293b;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent-blue: #0ea5e9;
-      --accent-green: #22c55e;
-      --accent-red: #ef4444;
-      --border-color: #334155;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diving Center Management Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
 
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-    }
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 24px;
+            min-height: 100vh;
+        }
 
-    /* Top Navbar */
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 24px;
-      background-color: #0b1120;
-      border-bottom: 1px solid var(--border-color);
-    }
+        #login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
 
-    .nav-tabs {
-      display: flex;
-      gap: 8px;
-    }
+        .login-card {
+            background-color: #1e293b;
+            padding: 32px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            width: 100%;
+            max-width: 400px;
+        }
 
-    .nav-tab {
-      padding: 8px 16px;
-      border-radius: 6px;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
+        .login-card h2 {
+            color: #38bdf8;
+            margin-bottom: 20px;
+            text-align: center;
+        }
 
-    .nav-tab.active {
-      background-color: var(--accent-blue);
-      color: #fff;
-    }
+        .app-container { display: none; }
 
-    .user-profile {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+        .tab-navigation {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #1e293b;
+            padding-bottom: 8px;
+        }
 
-    .user-badge {
-      font-size: 14px;
-      color: var(--text-muted);
-    }
+        .tab-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
 
-    .btn-logout {
-      background-color: var(--accent-red);
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
+        .tab-btn.active {
+            background-color: #0284c7;
+            color: white;
+        }
 
-    /* Dashboard Main Container */
-    .dashboard-container {
-      padding: 24px;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-    .header-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1e293b;
+        }
 
-    .btn-refresh {
-      background-color: var(--accent-blue);
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+        .title-group h1 { font-size: 1.5rem; color: #38bdf8; }
 
-    /* Top KPI Cards Grid */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
+        .user-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
 
-    .kpi-card {
-      background-color: var(--card-bg);
-      border-radius: 8px;
-      padding: 16px;
-      border: 1px solid var(--border-color);
-    }
+        .btn-logout {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
 
-    .kpi-title {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+        .btn-refresh, .btn-submit, .btn-export, .btn-process {
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .btn-submit { background-color: #0f766e; }
+        .btn-export { background-color: #16a34a; }
+        .btn-process { background-color: #22c55e; }
 
-    .kpi-value {
-      font-size: 28px;
-      font-weight: bold;
-      margin-bottom: 4px;
-    }
+        .stats-grid, .booking-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
 
-    .kpi-subtext {
-      font-size: 12px;
-      color: var(--accent-green);
-    }
+        .stat-card, .card {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-bottom: 24px;
+        }
 
-    /* Analytics Charts Grid */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-      gap: 20px;
-    }
+        .stat-title { font-size: 0.875rem; color: #94a3b8; margin-bottom: 8px; }
+        .stat-value { font-size: 1.875rem; font-weight: bold; }
+        .stat-trend { font-size: 0.8rem; font-weight: 600; margin-top: 6px; }
+        .trend-up { color: #4ade80; }
+        .trend-down { color: #f87171; }
+        .status-connected { color: #4ade80; }
 
-    .chart-card {
-      background-color: var(--card-bg);
-      border-radius: 8px;
-      padding: 20px;
-      border: 1px solid var(--border-color);
-    }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
 
-    .chart-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 16px;
-      color: var(--text-main);
-    }
+        .form-group label { font-size: 0.8rem; color: #94a3b8; font-weight: 500; }
+        .form-control {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .form-control:focus { outline: none; border-color: #38bdf8; }
+        .form-control[readonly] { background-color: #1e293b; color: #38bdf8; font-weight: bold; }
 
-    .chart-wrapper {
-      position: relative;
-      height: 260px;
-      width: 100%;
-    }
-  </style>
+        .client-preview-badge { font-size: 0.85rem; color: #4ade80; margin-top: 4px; display: none; }
+
+        .controls-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .table-container {
+            background-color: #1e293b;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+        th { background-color: #0f172a; color: #38bdf8; padding: 14px 16px; border-bottom: 1px solid #334155; text-transform: uppercase; font-size: 0.75rem; }
+        td { padding: 12px 16px; border-bottom: 1px solid #334155; color: #e2e8f0; white-space: nowrap; }
+        tr:hover td { background-color: #182234; }
+        .empty-state { padding: 40px; text-align: center; color: #94a3b8; }
+
+        .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .status-Pending { background: #eab308; color: #000; }
+        .status-Accepted { background: #22c55e; color: #fff; }
+        .status-Cancelled { background: #ef4444; color: #fff; }
+        
+        .btn-action { padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.75rem; font-weight: bold; margin-right: 4px; }
+        .btn-accept { background: #22c55e; color: white; }
+        .btn-cancel { background: #ef4444; color: white; }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .chart-box {
+            position: relative;
+            height: 280px;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- Top Navigation Bar -->
-  <nav class="navbar">
-    <div class="nav-tabs" id="nav-tabs-container">
-      <button class="nav-tab" onclick="switchTab('daily-operations')">Daily Operations</button>
-      
-      <!-- تبويب الهويات سيتم التحقق منه برمجياً، إذا كان المستخدم MANAGER سيتم إخفاؤه -->
-      <button class="nav-tab" id="tab-id-licenses" onclick="switchTab('id-licenses')">ID & Licenses</button>
-      
-      <button class="nav-tab active" onclick="switchTab('analytics')">📊 Analytics & Reports</button>
+    <div id="login-overlay">
+        <div class="login-card">
+            <h2>🔐 Diving Center Login</h2>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="manager@diving.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="******" required>
+                </div>
+                <button type="submit" class="btn-submit" style="width: 100%; margin-top: 10px;">Sign In</button>
+                <p id="loginError" style="color: #f87171; text-align: center; margin-top: 10px; font-size: 0.85rem;"></p>
+            </form>
+        </div>
     </div>
 
-    <div class="user-profile">
-      <span class="user-badge">👤 General Manager (MANAGER)</span>
-      <button class="btn-logout">Sign Out</button>
+    <div id="appContainer" class="app-container">
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab(event, 'daily-operations')">Daily Operations</button>
+            <button class="tab-btn" onclick="switchTab(event, 'id-licenses')">ID & Licenses</button>
+            <button class="tab-btn" id="analyticsTabBtn" style="display:none;" onclick="switchTab(event, 'analytics')">📊 Analytics & Reports</button>
+            <div style="margin-left: auto;" class="user-info">
+                <span id="currentUserDisplay"></span>
+                <button class="btn-logout" onclick="logout()">Sign Out</button>
+            </div>
+        </div>
+
+        <!-- TAB 1: Daily Operations -->
+        <div id="daily-operations" class="tab-content active">
+            <div class="header">
+                <div class="title-group">
+                    <h1>🗓️ Daily Bookings & Operations</h1>
+                </div>
+                <button class="btn-refresh" onclick="loadData()">🔄 Refresh Bookings</button>
+            </div>
+
+            <div class="card" id="newBookingCard">
+                <h3 class="card-title">📝 New Booking</h3>
+                <form id="bookingForm" onsubmit="submitBooking(event)">
+                    <div class="booking-grid">
+                        <div class="form-group">
+                            <label>Voucher no.</label>
+                            <input type="text" id="voucherNo" class="form-control" placeholder="12234" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Client ID no.</label>
+                            <input type="text" id="clientID" class="form-control" placeholder="Enter Passport / ID" oninput="lookupClientInfo()" required>
+                            <span id="clientPreviewBadge" class="client-preview-badge"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Name</label>
+                            <input type="text" id="customerName" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Nationality</label>
+                            <input type="text" id="nationality" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Activity</label>
+                            <select id="activity" class="form-control" required>
+                                <option value="">Select activity</option>
+                                <option value="Diving">Diving</option>
+                                <option value="Snorkeling">Snorkeling</option>
+                                <option value="Speedboat">Speedboat</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Supplier</label><input type="text" id="supplier" class="form-control"></div>
+                        <div class="form-group"><label>Guide</label><input type="text" id="guide" class="form-control"></div>
+                        <div class="form-group"><label>Guests</label><input type="number" id="guests" class="form-control" value="1" min="1"></div>
+                        <div class="form-group"><label>Date</label><input type="date" id="bookingDate" class="form-control" required></div>
+                        <div class="form-group"><label>Pick-up time</label><input type="time" id="pickupTime" class="form-control"></div>
+                        <div class="form-group">
+                            <label>Payment method</label>
+                            <select id="paymentMethod" class="form-control">
+                                <option value="USD Cash">USD Cash</option>
+                                <option value="EUR Credit">EUR Credit</option>
+                                <option value="Card">Card</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Total amount</label><input type="number" id="totalAmount" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>Paid amount</label><input type="number" id="paidAmount" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>Notes</label><input type="text" id="notes" class="form-control"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit" id="saveBookingBtn">Save booking</button>
+                        <span id="bookingStatus" style="align-self: center; font-weight: 500;"></span>
+                    </div>
+                </form>
+            </div>
+
+            <div class="controls-bar">
+                <input type="text" id="search-booking" class="search-input" placeholder="🔍 Search Bookings..." oninput="filterBookings()">
+                <button class="btn-export" onclick="exportToExcel('bookings-table')">📊 Export CSV</button>
+            </div>
+
+            <div class="table-container">
+                <table id="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>Voucher</th>
+                            <th>Client ID</th>
+                            <th>Customer Name</th>
+                            <th>Nationality</th>
+                            <th>Activity</th>
+                            <th>Supplier</th>
+                            <th>Guide</th>
+                            <th>Time</th>
+                            <th>Payment</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Status</th>
+                            <th id="thActions" style="display:none;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-table-body">
+                        <tr><td colspan="13" class="empty-state">Loading bookings data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: ID & Licenses -->
+        <div id="id-licenses" class="tab-content">
+            <div class="header">
+                <div class="title-group"><h1>🪪 ID & License Management Dashboard</h1></div>
+                <button class="btn-refresh" onclick="loadData()">🔄 Refresh Data</button>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">Connection Status</div>
+                    <div class="stat-value" id="connection-status">Connecting...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Total Registered Clients</div>
+                    <div class="stat-value" id="total-records">0</div>
+                </div>
+            </div>
+            <div class="card" id="uploadCard">
+                <h3 class="card-title">📤 Upload New Passport / ID Document</h3>
+                <form id="uploadForm" class="upload-form" onsubmit="uploadDocument(event)">
+                    <input type="file" id="fileInput" class="file-input" accept="image/*,application/pdf" required>
+                    <button type="submit" id="uploadBtn" class="btn-process">✨ Process Document</button>
+                    <span id="uploadStatus" class="upload-status"></span>
+                </form>
+            </div>
+            <div class="controls-bar">
+                <input type="text" id="search-input" class="search-input" placeholder="🔍 Search documents..." oninput="filterData()">
+                <button class="btn-export" onclick="exportToExcel('data-table')">📊 Export to Excel</button>
+            </div>
+            <div class="table-container">
+                <table id="data-table">
+                    <thead><tr id="table-header"></tr></thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="100%" class="empty-state">Loading documents data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: Analytics (Manager Only) -->
+        <div id="analytics" class="tab-content">
+            <div class="header">
+                <div class="title-group"><h1>📊 Executive Analytics Dashboard</h1></div>
+                <button class="btn-refresh" onclick="loadData()">🔄 Refresh Analytics</button>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">New Clients (This Week)</div>
+                    <div class="stat-value" id="kpi-weekly-clients">0</div>
+                    <div class="stat-trend" id="kpi-weekly-growth">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">New Clients (This Month)</div>
+                    <div class="stat-value" id="kpi-monthly-clients">0</div>
+                    <div class="stat-trend" id="kpi-monthly-growth">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Paid vs Pending Rate</div>
+                    <div class="stat-value" id="kpi-paid-rate">0%</div>
+                    <div class="stat-trend" id="kpi-paid-subtext" style="color:#94a3b8;">Fully Paid Bookings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Monthly Revenue Collected</div>
+                    <div class="stat-value" id="kpi-monthly-revenue" style="color:#4ade80;">$0</div>
+                    <div class="stat-trend" id="kpi-revenue-growth">--</div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <div class="card">
+                    <h3 style="color:#38bdf8; margin-bottom:15px;">📈 Weekly New Clients Acquisition</h3>
+                    <div class="chart-box"><canvas id="weeklyClientsChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h3 style="color:#38bdf8; margin-bottom:15px;">🤿 Popularity by Activity</h3>
+                    <div class="chart-box"><canvas id="activitiesChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h3 style="color:#38bdf8; margin-bottom:15px;">💵 Payment Collection Status</h3>
+                    <div class="chart-box"><canvas id="paymentChart"></canvas></div>
+                </div>
+            </div>
+        </div>
     </div>
-  </nav>
 
-  <!-- Main Executive Dashboard Page -->
-  <main class="dashboard-container">
-    
-    <div class="header-actions">
-      <h2>📊 Executive Analytics Dashboard</h2>
-      <button class="btn-refresh" onclick="loadDashboardData()">🔄 Refresh Analytics</button>
-    </div>
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwBa1h3q9oyPOjq2XY1w5Yqh3heC6XmNO-50oJMSQqmePN8RNnH4aA1v2IJyMk3_CmTw/exec";
+        const N8N_WEBHOOK_URL = "https://Automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
+        
+        let rawData = [];
+        let rawBookingsData = [];
+        let clientMap = {};
+        let currentUser = null;
 
-    <!-- Top Summary Metrics (KPI Cards) -->
-    <section class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-title">New Clients (This Week)</div>
-        <div class="kpi-value" id="kpi-clients-week">5</div>
-        <div class="kpi-subtext">▲ +100% vs last week</div>
-      </div>
+        let weeklyChartInstance = null;
+        let activityChartInstance = null;
+        let paymentChartInstance = null;
 
-      <div class="kpi-card">
-        <div class="kpi-title">New Clients (This Month)</div>
-        <div class="kpi-value" id="kpi-clients-month">5</div>
-        <div class="kpi-subtext">▲ +100% vs last month</div>
-      </div>
+        window.onload = function() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                initApp();
+            }
+        };
 
-      <!-- الكارت الفوقي بعد التحسين لتوضيح نسبة التحصيل المالي وإزالة التناقض -->
-      <div class="kpi-card">
-        <div class="kpi-title">Collection Rate</div>
-        <div class="kpi-value" id="kpi-paid-rate">26%</div>
-        <div class="kpi-subtext" id="kpi-paid-subtext" style="color: var(--text-muted);">$412 of $1,555 Collected</div>
-      </div>
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errElem = document.getElementById('loginError');
 
-      <div class="kpi-card">
-        <div class="kpi-title">Monthly Revenue Collected</div>
-        <div class="kpi-value" style="color: var(--accent-green);" id="kpi-revenue">$412</div>
-        <div class="kpi-subtext" style="color: var(--text-muted);">--</div>
-      </div>
-    </section>
+            errElem.innerText = "⏳ Checking credentials...";
 
-    <!-- Detailed Charts Section -->
-    <section class="charts-grid">
-      
-      <!-- Chart 1: Acquisition -->
-      <div class="chart-card">
-        <div class="chart-header">📈 Weekly New Clients Acquisition</div>
-        <div class="chart-wrapper">
-          <canvas id="lineChartAcquisition"></canvas>
-        </div>
-      </div>
+            try {
+                const res = await fetch(`${SCRIPT_URL}?sheet=Users`);
+                const usersData = await res.json();
 
-      <!-- Chart 2: Activity Popularity -->
-      <div class="chart-card">
-        <div class="chart-header">🚤 Popularity by Activity</div>
-        <div class="chart-wrapper">
-          <canvas id="doughnutChartPopularity"></canvas>
-        </div>
-      </div>
+                let foundUser = null;
+                for (let i = 1; i < usersData.length; i++) {
+                    if (usersData[i][0].toLowerCase() === email.toLowerCase() && usersData[i][1] === password) {
+                        foundUser = {
+                            email: usersData[i][0],
+                            role: usersData[i][2],
+                            name: usersData[i][3]
+                        };
+                        break;
+                    }
+                }
 
-      <!-- Chart 3: Collection Status (Bar Chart) -->
-      <div class="chart-card">
-        <div class="chart-header">💵 Payment Collection Status</div>
-        <div class="chart-wrapper">
-          <canvas id="barChartCollection"></canvas>
-        </div>
-      </div>
-
-    </section>
-  </main>
-
-  <!-- Dashboard Logic JavaScript -->
-  <script>
-    // 1. بيانات محاكاة للمستخدم الحالي
-    const currentUser = {
-      name: "General Manager",
-      role: "MANAGER" // الخيارات: 'MANAGER' أو 'SALES'
-    };
-
-    // 2. فحص الدور وإخفاء تبويب ID & Licenses لو كان مدير
-    document.addEventListener("DOMContentLoaded", () => {
-      if (currentUser.role === 'MANAGER') {
-        const idLicensesTab = document.getElementById('tab-id-licenses');
-        if (idLicensesTab) {
-          idLicensesTab.style.display = 'none'; // إخفاء التبويب من واجهة المدير
+                if (foundUser) {
+                    currentUser = foundUser;
+                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    initApp();
+                } else {
+                    errElem.innerText = "❌ Invalid email or password.";
+                }
+            } catch (err) {
+                errElem.innerText = "❌ Connection error during login.";
+            }
         }
-      }
 
-      // تحميل الرسومات البيانية
-      initCharts();
-    });
+        function initApp() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('currentUserDisplay').innerText = `👤 ${currentUser.name} (${currentUser.role.toUpperCase()})`;
 
-    // 3. تهيئة الرسومات البيانية Chart.js
-    function initCharts() {
-      // 1. Line Chart: Weekly New Clients
-      const ctxLine = document.getElementById('lineChartAcquisition').getContext('2d');
-      new Chart(ctxLine, {
-        type: 'line',
-        data: {
-          labels: ['Last Week', 'This Week'],
-          datasets: [{
-            label: 'New Registered Clients',
-            data: [0, 5],
-            borderColor: '#0ea5e9',
-            backgroundColor: 'rgba(14, 165, 233, 0.15)',
-            fill: true,
-            tension: 0.1,
-            pointRadius: 4,
-            pointBackgroundColor: '#0ea5e9'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
-            x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
-          }
+            const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
+            if (isManager) {
+                const newBookingCard = document.getElementById('newBookingCard');
+                if (newBookingCard) newBookingCard.style.display = 'none';
+                document.getElementById('analyticsTabBtn').style.display = 'inline-block';
+            }
+
+            document.getElementById('bookingDate').valueAsDate = new Date();
+            loadData();
         }
-      });
 
-      // 2. Doughnut Chart: Popularity by Activity
-      const ctxDoughnut = document.getElementById('doughnutChartPopularity').getContext('2d');
-      new Chart(ctxDoughnut, {
-        type: 'doughnut',
-        data: {
-          labels: ['Diving', 'Snorkeling', 'Speedboat'],
-          datasets: [{
-            data: [40, 30, 30],
-            backgroundColor: ['#0284c7', '#38bdf8', '#22c55e'],
-            borderWidth: 2,
-            borderColor: '#1e293b'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'top', labels: { color: '#94a3b8', boxWidth: 12 } }
-          },
-          cutout: '70%'
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            location.reload();
         }
-      });
 
-      // 3. Bar Chart: Payment Collection Status ($)
-      const ctxBar = document.getElementById('barChartCollection').getContext('2d');
-      new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-          labels: ['Collected Paid Amount', 'Pending Remaining Amount'],
-          datasets: [{
-            label: 'USD ($)',
-            data: [412, 1143], // مبالغ التحصيل بالدولار
-            backgroundColor: ['#22c55e', '#ef4444'],
-            borderRadius: 4,
-            barThickness: 90
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { labels: { color: '#94a3b8', boxWidth: 12 } }
-          },
-          scales: {
-            y: { 
-              grid: { color: '#334155' }, 
-              ticks: { color: '#94a3b8' },
-              beginAtZero: true,
-              max: 1200
-            },
-            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-          }
+        function switchTab(e, tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            e.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            if (tabId === 'analytics') {
+                renderAnalytics();
+            }
         }
-      });
-    }
 
-    function switchTab(tabName) {
-      console.log("Navigating to:", tabName);
-    }
+        function lookupClientInfo() {
+            const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
+            const nameInput = document.getElementById('customerName');
+            const natInput = document.getElementById('nationality');
+            const badge = document.getElementById('clientPreviewBadge');
 
-    function loadDashboardData() {
-      console.log("Refreshing analytics data...");
-    }
-  </script>
+            if (!clientIDInput) {
+                nameInput.value = ''; natInput.value = ''; badge.style.display = 'none';
+                return;
+            }
+
+            if (clientMap[clientIDInput]) {
+                const client = clientMap[clientIDInput];
+                nameInput.value = client.name || 'N/A';
+                natInput.value = client.nationality || 'N/A';
+                badge.style.color = "#4ade80";
+                badge.innerText = `✓ Found: ${client.name}`;
+                badge.style.display = 'block';
+            } else {
+                nameInput.value = ''; natInput.value = '';
+                badge.style.color = "#f87171";
+                badge.innerText = "❌ Client ID not registered";
+                badge.style.display = 'block';
+            }
+        }
+
+        async function submitBooking(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveBookingBtn');
+            const status = document.getElementById('bookingStatus');
+            const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
+
+            if (!clientMap[clientIDInput]) {
+                alert("⚠️ Client ID not found in ID & Licenses database! Upload passport first.");
+                return;
+            }
+
+            btn.disabled = true;
+            status.style.color = "#38bdf8";
+            status.innerText = "⏳ Saving booking...";
+
+            const payload = {
+                voucherNo: document.getElementById('voucherNo').value,
+                clientID: document.getElementById('clientID').value.trim(),
+                activity: document.getElementById('activity').value,
+                supplier: document.getElementById('supplier').value,
+                guide: document.getElementById('guide').value,
+                guests: document.getElementById('guests').value,
+                bookingDate: document.getElementById('bookingDate').value,
+                pickupTime: document.getElementById('pickupTime').value,
+                paymentMethod: document.getElementById('paymentMethod').value,
+                totalAmount: document.getElementById('totalAmount').value,
+                paidAmount: document.getElementById('paidAmount').value,
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                status.style.color = "#4ade80";
+                status.innerText = "✅ Booking Saved!";
+                document.getElementById('bookingForm').reset();
+                setTimeout(() => status.innerText = "", 3000);
+                setTimeout(loadData, 1500);
+            } catch (err) {
+                status.style.color = "#f87171";
+                status.innerText = "❌ Error saving booking";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function loadData() {
+            document.getElementById('connection-status').innerText = 'Loading...';
+            const timestamp = new Date().getTime();
+
+            await new Promise((resolve) => {
+                window.callbackSheet1 = function(data) {
+                    if (data && data.length > 0) {
+                        document.getElementById('connection-status').innerText = 'Connected 🟢';
+                        document.getElementById('connection-status').className = 'stat-value status-connected';
+                        rawData = data;
+                        
+                        const headers = data[0].map(h => String(h).trim().toLowerCase());
+                        const idIndex = headers.indexOf('id_number');
+                        const nameIndex = headers.indexOf('full_name');
+                        const authorityIndex = headers.indexOf('issuing_authority');
+                        const createdAtIndex = headers.indexOf('created_at');
+
+                        clientMap = {};
+                        data.slice(1).forEach(row => {
+                            const id = String(idIndex !== -1 ? row[idIndex] : (row[3] || row[0])).trim().toLowerCase();
+                            const name = nameIndex !== -1 ? row[nameIndex] : row[0];
+                            const authority = authorityIndex !== -1 ? row[authorityIndex] : (row[2] || 'N/A');
+                            const createdAt = createdAtIndex !== -1 ? row[createdAtIndex] : null;
+
+                            if (id) {
+                                clientMap[id] = { 
+                                    name: name || 'Unknown', 
+                                    nationality: authority || 'N/A',
+                                    createdAt: createdAt
+                                };
+                            }
+                        });
+                        renderTable(rawData);
+                    }
+                    resolve();
+                };
+
+                const script1 = document.createElement('script');
+                script1.src = `${SCRIPT_URL}?sheet=الورقة1&callback=callbackSheet1&_t=${timestamp}`;
+                document.body.appendChild(script1);
+            });
+
+            const script2 = document.createElement('script');
+            script2.src = `${SCRIPT_URL}?sheet=Sheet2&callback=callbackSheet2&_t=${timestamp}`;
+            document.body.appendChild(script2);
+        }
+
+        window.callbackSheet2 = function(data) {
+            if (!data || data.length <= 1) {
+                document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
+                return;
+            }
+            rawBookingsData = data;
+            renderBookingsTable(data.slice(1));
+
+            if (document.getElementById('analytics').classList.contains('active')) {
+                renderAnalytics();
+            }
+        };
+
+        function renderBookingsTable(rows) {
+            const tbody = document.getElementById('bookings-table-body');
+            tbody.innerHTML = '';
+            
+            const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
+            if (isManager) {
+                document.getElementById('thActions').style.display = 'table-cell';
+            }
+
+            rows.forEach(row => {
+                const voucher = String(row[0] || '');
+                const clientID = String(row[1] || '').trim();
+                const clientInfo = clientMap[clientID.toLowerCase()] || { name: 'N/A', nationality: 'N/A' };
+                let timeVal = (row[9] || '').includes('T') ? row[9].split('T')[1].substring(0, 5) : (row[9] || '');
+                const status = row[14] || 'Pending';
+
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-voucher', voucher);
+                
+                let html = `
+                    <td>${voucher}</td>
+                    <td><strong>${clientID}</strong></td>
+                    <td>${clientInfo.name}</td>
+                    <td>${clientInfo.nationality}</td>
+                    <td>${row[4] || ''}</td>
+                    <td>${row[5] || ''}</td>
+                    <td>${row[6] || ''}</td>
+                    <td>${timeVal}</td>
+                    <td>${row[10] || ''}</td>
+                    <td>$${row[11] || '0'}</td>
+                    <td>$${row[12] || '0'}</td>
+                    <td class="status-cell"><span class="badge-status status-${status}">${status}</span></td>
+                `;
+
+                if (isManager) {
+                    if (status.toLowerCase() === 'pending') {
+                        html += `
+                            <td class="actions-cell">
+                                <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">Accept</button>
+                                <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">Cancel</button>
+                            </td>
+                        `;
+                    } else {
+                        html += `<td class="actions-cell">-</td>`;
+                    }
+                }
+
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function updateBookingStatus(voucherNo, newStatus) {
+            const rowElem = document.querySelector(`tr[data-voucher="${voucherNo}"]`);
+            if (rowElem) {
+                const statusCell = rowElem.querySelector('.status-cell');
+                const actionsCell = rowElem.querySelector('.actions-cell');
+                if (statusCell) statusCell.innerHTML = `<span class="badge-status status-${newStatus}">${newStatus}</span>`;
+                if (actionsCell) actionsCell.innerHTML = `-`;
+            }
+
+            for (let i = 1; i < rawBookingsData.length; i++) {
+                if (String(rawBookingsData[i][0]) === String(voucherNo)) {
+                    rawBookingsData[i][14] = newStatus;
+                    break;
+                }
+            }
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: "updateStatus", voucherNo: voucherNo, status: newStatus })
+                });
+            } catch (err) {
+                console.error("Failed to sync status update with server.");
+            }
+        }
+
+        function filterBookings() {
+            const query = document.getElementById('search-booking').value.toLowerCase().trim();
+            if (!query) {
+                renderBookingsTable(rawBookingsData.slice(1));
+                return;
+            }
+            const filtered = rawBookingsData.slice(1).filter(row => {
+                const clientID = String(row[1] || '').toLowerCase();
+                const clientInfo = clientMap[clientID] || { name: '', nationality: '' };
+                return row.some(cell => String(cell).toLowerCase().includes(query)) ||
+                       clientInfo.name.toLowerCase().includes(query);
+            });
+            renderBookingsTable(filtered);
+        }
+
+        function renderTable(data) {
+            const headerRow = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
+            if (data.length === 0) return;
+
+            const headers = data[0];
+            headerRow.innerHTML = '<th>#</th>';
+            headers.forEach(h => headerRow.innerHTML += `<th>${h}</th>`);
+
+            const rows = data.slice(1);
+            document.getElementById('total-records').innerText = rows.length;
+            tableBody.innerHTML = '';
+            rows.forEach((row, index) => {
+                let tr = `<tr><td>${index + 1}</td>`;
+                row.forEach(cell => tr += `<td>${cell || ''}</td>`);
+                tr += '</tr>';
+                tableBody.innerHTML += tr;
+            });
+        }
+
+        /* -------------------------------------------------------------
+           دالة تحليل البيانات والرسم البياني (Analytics Core Engine)
+        ------------------------------------------------------------- */
+        function renderAnalytics() {
+            if (!rawData || rawData.length <= 1) return;
+
+            const now = new Date();
+            const startOfThisWeek = new Date(now);
+            startOfThisWeek.setDate(now.getDate() - now.getDay());
+            startOfThisWeek.setHours(0,0,0,0);
+
+            const startOfLastWeek = new Date(startOfThisWeek);
+            startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+            const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+            // 1. تحليل العملاء بناءً على created_at من الورقة الأولى
+            let thisWeekClients = 0;
+            let lastWeekClients = 0;
+            let thisMonthClients = 0;
+            let lastMonthClients = 0;
+
+            const headers1 = rawData[0].map(h => String(h).trim().toLowerCase());
+            const createdAtIndex = headers1.indexOf('created_at');
+
+            rawData.slice(1).forEach(row => {
+                const dateStr = createdAtIndex !== -1 ? row[createdAtIndex] : row[0];
+                if (!dateStr) return;
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return;
+
+                if (d >= startOfThisWeek) thisWeekClients++;
+                else if (d >= startOfLastWeek && d < startOfThisWeek) lastWeekClients++;
+
+                if (d >= startOfThisMonth) thisMonthClients++;
+                else if (d >= startOfLastMonth && d <= endOfLastMonth) lastMonthClients++;
+            });
+
+            document.getElementById('kpi-weekly-clients').innerText = thisWeekClients;
+            document.getElementById('kpi-monthly-clients').innerText = thisMonthClients;
+
+            // حساب نسبة التغير للأسبوع
+            const weeklyGrowth = lastWeekClients === 0 ? (thisWeekClients > 0 ? 100 : 0) : Math.round(((thisWeekClients - lastWeekClients) / lastWeekClients) * 100);
+            const weeklyGrowthElem = document.getElementById('kpi-weekly-growth');
+            weeklyGrowthElem.innerText = `${weeklyGrowth >= 0 ? '▲ +' : '▼ '}${weeklyGrowth}% vs last week`;
+            weeklyGrowthElem.className = `stat-trend ${weeklyGrowth >= 0 ? 'trend-up' : 'trend-down'}`;
+
+            // حساب نسبة التغير للشهر
+            const monthlyGrowth = lastMonthClients === 0 ? (thisMonthClients > 0 ? 100 : 0) : Math.round(((thisMonthClients - lastMonthClients) / lastMonthClients) * 100);
+            const monthlyGrowthElem = document.getElementById('kpi-monthly-growth');
+            monthlyGrowthElem.innerText = `${monthlyGrowth >= 0 ? '▲ +' : '▼ '}${monthlyGrowth}% vs last month`;
+            monthlyGrowthElem.className = `stat-trend ${monthlyGrowth >= 0 ? 'trend-up' : 'trend-down'}`;
+
+            // 2. تحليل الحجوزات والدفع من الورقة الثانية
+            let totalBookingsCount = 0;
+            let fullyPaidCount = 0;
+            let totalPaidRevenue = 0;
+            const activityCounts = { Diving: 0, Snorkeling: 0, Speedboat: 0 };
+            let totalPaidSum = 0;
+            let totalPendingSum = 0;
+
+            if (rawBookingsData && rawBookingsData.length > 1) {
+                const bookings = rawBookingsData.slice(1);
+                totalBookingsCount = bookings.length;
+
+                bookings.forEach(b => {
+                    const activity = b[4] || 'Other';
+                    if (activityCounts[activity] !== undefined) activityCounts[activity]++;
+                    else activityCounts[activity] = 1;
+
+                    const total = parseFloat(b[11]) || 0;
+                    const paid = parseFloat(b[12]) || 0;
+
+                    totalPaidSum += paid;
+                    if (total > paid) totalPendingSum += (total - paid);
+
+                    if (paid >= total && total > 0) fullyPaidCount++;
+
+                    // حساب الأرباح للشهر الحالي بناء على تاريخ الحجز Date (العمود I)
+                    const bDate = new Date(b[8]);
+                    if (!isNaN(bDate.getTime()) && bDate >= startOfThisMonth) {
+                        totalPaidRevenue += paid;
+                    }
+                });
+            }
+
+            const paidRate = totalBookingsCount === 0 ? 0 : Math.round((fullyPaidCount / totalBookingsCount) * 100);
+            document.getElementById('kpi-paid-rate').innerText = `${paidRate}%`;
+            document.getElementById('kpi-monthly-revenue').innerText = `$${totalPaidRevenue.toLocaleString()}`;
+
+            // 3. رسم المخططات البيانية (Chart.js)
+            
+            // Chart 1: الأنشطة
+            const ctxActivity = document.getElementById('activitiesChart').getContext('2d');
+            if (activityChartInstance) activityChartInstance.destroy();
+            activityChartInstance = new Chart(ctxActivity, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(activityCounts),
+                    datasets: [{
+                        data: Object.values(activityCounts),
+                        backgroundColor: ['#0284c7', '#38bdf8', '#22c55e', '#eab308']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Chart 2: حالات الدفع
+            const ctxPayment = document.getElementById('paymentChart').getContext('2d');
+            if (paymentChartInstance) paymentChartInstance.destroy();
+            paymentChartInstance = new Chart(ctxPayment, {
+                type: 'bar',
+                data: {
+                    labels: ['Collected Paid Amount', 'Pending Remaining Amount'],
+                    datasets: [{
+                        label: 'USD ($)',
+                        data: [totalPaidSum, totalPendingSum],
+                        backgroundColor: ['#22c55e', '#ef4444']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Chart 3: انضمام العملاء الأسبوعي
+            const ctxWeekly = document.getElementById('weeklyClientsChart').getContext('2d');
+            if (weeklyChartInstance) weeklyChartInstance.destroy();
+            weeklyChartInstance = new Chart(ctxWeekly, {
+                type: 'line',
+                data: {
+                    labels: ['Last Week', 'This Week'],
+                    datasets: [{
+                        label: 'New Registered Clients',
+                        data: [lastWeekClients, thisWeekClients],
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function exportToExcel(tableId) {
+            const table = document.getElementById(tableId);
+            const workbook = XLSX.utils.table_to_book(table);
+            XLSX.writeFile(workbook, `Export_${tableId}.xlsx`);
+        }
+
+        async function uploadDocument(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('fileInput');
+            const statusText = document.getElementById('uploadStatus');
+            const uploadBtn = document.getElementById('uploadBtn');
+            if (!fileInput.files[0]) return;
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            uploadBtn.disabled = true;
+            statusText.style.color = "#38bdf8";
+            statusText.innerText = "⏳ Processing...";
+
+            try {
+                const response = await fetch(N8N_WEBHOOK_URL, { method: "POST", body: formData });
+                if (response.ok) {
+                    statusText.style.color = "#4ade80";
+                    statusText.innerText = "✅ Successfully Processed!";
+                    fileInput.value = "";
+                    setTimeout(loadData, 2000);
+                }
+            } catch (err) {
+                statusText.style.color = "#f87171";
+                statusText.innerText = "❌ Error uploading.";
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
