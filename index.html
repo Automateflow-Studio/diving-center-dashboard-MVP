@@ -257,18 +257,15 @@
 </div>
 
 <script>
-    // الرابط المباشر الخاص بكِ
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzM_g1qI-jPcC81KxgAttsiUy3hLc1P8PpkLz-5cuXYvWTK1yk6z9toRRNbjWsNiXW0/exec';
 
     let clientMap = {};
 
-    // تحميل البيانات من الـ App Script
     async function loadData() {
         try {
             const response = await fetch(SCRIPT_URL);
             const data = await response.json();
 
-            // حفظ بيانات العملاء لربطهما باسم العميل والجنسية
             clientMap = {};
             const clientSelect = document.getElementById('b-client-id');
             clientSelect.innerHTML = '<option value="">-- Select Client --</option>';
@@ -288,7 +285,6 @@
                 });
             }
 
-            // عرض الحجوزات
             renderBookingsTable(data.bookings || []);
 
         } catch (err) {
@@ -297,7 +293,7 @@
         }
     }
 
-    // عرض بيانات الحجوزات في الجدول بالترتيب الدقيق 100%
+    // التنظيف ومعالجة الفهارس لحل مشكلة إزاحة الأعمدة بالتحديد
     function renderBookingsTable(rows) {
         const tbody = document.getElementById('bookings-table-body');
         tbody.innerHTML = '';
@@ -314,6 +310,17 @@
 
             const clientInfo = clientMap[key] || { name: 'N/A', nationality: 'N/A' };
 
+            // تنظيف التاريخ
+            let rawDate = String(row[6] || '');
+            if (rawDate.includes('T')) rawDate = rawDate.split('T')[0];
+
+            // تنظيف الوقت ومنع ظهور 1899-12-30
+            let rawTime = String(row[7] || '');
+            if (rawTime.includes('T')) {
+                const timePart = rawTime.split('T')[1];
+                rawTime = timePart ? timePart.substring(0, 5) : rawTime;
+            }
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${voucher}</strong></td>
@@ -323,8 +330,8 @@
                 <td>${row[2] || ''}</td>
                 <td>${row[3] || ''}</td>
                 <td>${row[4] || ''}</td>
-                <td>${row[6] || ''}</td>
-                <td>${row[7] || ''}</td>
+                <td>${rawDate}</td>
+                <td>${rawTime}</td>
                 <td>${row[8] || ''}</td>
                 <td>$${row[9] || '0'}</td>
                 <td>$${row[10] || '0'}</td>
@@ -333,7 +340,6 @@
         });
     }
 
-    // حفظ العميل
     async function submitClient(e) {
         e.preventDefault();
         const btn = document.getElementById('btn-client');
@@ -365,7 +371,6 @@
         }
     }
 
-    // حفظ الحجز
     async function submitBooking(e) {
         e.preventDefault();
         const btn = document.getElementById('btn-booking');
@@ -405,7 +410,6 @@
         }
     }
 
-    // التشغيل الفوري عند فتح الصفحة
     loadData();
 </script>
 
