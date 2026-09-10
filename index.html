@@ -1,507 +1,464 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Operations - Booking Dashboard</title>
+    <title>ID & License Management Dashboard</title>
+    <!-- XLSX Library for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        :root {
-            --bg-dark: #0b132b;
-            --card-bg: #1c2541;
-            --input-bg: #0b132b;
-            --text-main: #ffffff;
-            --text-muted: #8d99ae;
-            --accent-blue: #0077b6;
-            --accent-green: #06d6a0;
-            --border-color: #3a506b;
-            --danger-red: #ef233c;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 24px;
+            min-height: 100vh;
         }
 
-        .container {
-            max-width: 1300px;
-            margin: 0 auto;
-        }
-
-        /* Top Nav Tabs */
-        .tabs-header {
+        .header {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1e293b;
         }
 
-        .tab-btn {
-            background: transparent;
+        .title-group h1 {
+            font-size: 1.5rem;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-refresh {
+            background-color: #0284c7;
+            color: white;
             border: none;
-            color: var(--text-muted);
-            padding: 8px 16px;
-            font-weight: 600;
+            padding: 10px 18px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
         }
 
-        .tab-btn.active {
-            background-color: #0077b6;
-            color: #ffffff;
+        .btn-refresh:hover {
+            background-color: #0369a1;
         }
 
-        /* Forms Panel */
-        .panel-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background-color: #1e293b;
             padding: 20px;
-            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
         }
 
-        .panel-title {
-            font-size: 1.1rem;
+        .stat-title {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.875rem;
             font-weight: bold;
-            margin-bottom: 15px;
+        }
+
+        .status-connected {
+            color: #4ade80;
+        }
+
+        .status-error {
+            color: #f87171;
+        }
+
+        /* Upload Card Styling */
+        .upload-card {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-bottom: 24px;
+        }
+
+        .upload-title {
+            color: #38bdf8;
+            margin-bottom: 14px;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .form-group {
+        .upload-form {
             display: flex;
-            flex-direction: column;
-            gap: 5px;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
-        .form-group.col-2 {
-            grid-column: span 2;
-        }
-
-        label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        input, select, textarea {
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
-            color: #ffffff;
-            padding: 8px 12px;
+        .file-input {
+            background: #0f172a;
+            color: white;
+            padding: 10px;
             border-radius: 6px;
-            font-size: 0.85rem;
-            outline: none;
+            border: 1px solid #334155;
+            cursor: pointer;
         }
 
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--accent-blue);
+        .file-input::file-selector-button {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
         }
 
-        input[readonly] {
-            color: var(--text-muted);
+        .btn-process {
+            background-color: #22c55e;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-process:hover {
+            background-color: #16a34a;
+        }
+
+        .btn-process:disabled {
+            background-color: #475569;
             cursor: not-allowed;
         }
 
-        .validation-msg {
-            color: var(--danger-red);
-            font-size: 0.7rem;
-            display: none;
-            margin-top: 2px;
+        .upload-status {
+            font-size: 0.9rem;
+            font-weight: 500;
         }
 
-        .actions-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .btn-submit {
-            background-color: #00b4d8;
-            color: #ffffff;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .btn-clear {
-            background-color: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            padding: 8px 18px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        /* Search & Export Bar */
+        /* Controls Section (Search + Export) */
         .controls-bar {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            gap: 15px;
+            gap: 12px;
+            margin-bottom: 24px;
+            align-items: center;
         }
 
         .search-input {
-            flex-grow: 1;
-            padding: 10px 15px;
-            background-color: var(--card-bg);
+            flex: 1;
+            padding: 12px 16px;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #38bdf8;
         }
 
         .btn-export {
-            background-color: var(--accent-green);
-            color: #000;
+            background-color: #16a34a;
+            color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: bold;
+            padding: 12px 20px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            white-space: nowrap;
+            transition: background-color 0.2s;
         }
 
-        /* Data Table */
+        .btn-export:hover {
+            background-color: #15803d;
+        }
+
         .table-container {
-            background-color: var(--card-bg);
+            background-color: #1e293b;
             border-radius: 8px;
+            border: 1px solid #334155;
             overflow-x: auto;
-            border: 1px solid var(--border-color);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.8rem;
             text-align: left;
+            font-size: 0.875rem;
         }
 
         th {
-            background-color: #0b132b;
-            color: var(--text-muted);
-            padding: 12px 15px;
-            font-weight: bold;
+            background-color: #0f172a;
+            color: #38bdf8;
+            padding: 14px 16px;
+            font-weight: 600;
+            border-bottom: 1px solid #334155;
+            white-space: nowrap;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border-color);
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
         }
 
         td {
-            padding: 12px 15px;
-            border-bottom: 1px solid rgba(58, 80, 107, 0.4);
+            padding: 12px 16px;
+            border-bottom: 1px solid #334155;
+            color: #e2e8f0;
+            white-space: nowrap;
         }
 
-        tr:hover {
-            background-color: rgba(255, 255, 255, 0.02);
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #182234;
         }
 
         .empty-state {
-            text-align: center;
             padding: 40px;
-            color: var(--text-muted);
+            text-align: center;
+            color: #94a3b8;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- Top Navigation Tabs -->
-    <div class="tabs-header">
-        <button class="tab-btn active">Daily Operations</button>
-        <button class="tab-btn">ID & Licenses</button>
+    <div class="header">
+        <div class="title-group">
+            <h1>🪪 ID & License Management Dashboard</h1>
+        </div>
+        <button class="btn-refresh" onclick="loadData()">🔄 Refresh Data</button>
     </div>
 
-    <!-- Booking Form Card -->
-    <div class="panel-card">
-        <div class="panel-title">📜 New Booking</div>
-        
-        <form id="booking-form" onsubmit="saveBooking(event)">
-            <!-- Row 1 -->
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Voucher no.</label>
-                    <input type="text" id="b-voucher" placeholder="12234" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Client ID no.</label>
-                    <input type="text" id="b-client-id" placeholder="S569-526-89-901-7" oninput="autoFetchClient(this.value)" required>
-                    <span id="client-error" class="validation-msg">❌ Client ID not registered in Sheet1</span>
-                </div>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-title">Connection Status</div>
+            <div class="stat-value" id="connection-status">Connecting...</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Total Records</div>
+            <div class="stat-value" id="total-records">0</div>
+        </div>
+    </div>
 
-                <div class="form-group">
-                    <label>Customer Name (Auto-fetched)</label>
-                    <input type="text" id="b-client-name" placeholder="Auto-filled from Sheet1" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Nationality (Auto-fetched)</label>
-                    <input type="text" id="b-nationality" placeholder="Auto-filled from Sheet1" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Activity</label>
-                    <select id="b-activity" required>
-                        <option value="">Select activity</option>
-                        <option value="Diving">Diving</option>
-                        <option value="Boat Trip">Boat Trip</option>
-                        <option value="Safari">Safari</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Supplier</label>
-                    <input type="text" id="b-supplier" placeholder="Boat / operator">
-                </div>
-            </div>
-
-            <!-- Row 2 -->
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Guide</label>
-                    <input type="text" id="b-guide" placeholder="Assigned guide">
-                </div>
-
-                <div class="form-group">
-                    <label>Guests</label>
-                    <input type="number" id="b-guests" value="1" min="1">
-                </div>
-
-                <div class="form-group">
-                    <label>Date</label>
-                    <input type="date" id="b-date" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Pick-up time</label>
-                    <input type="time" id="b-time" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Payment method</label>
-                    <select id="b-payment">
-                        <option value="USD Cash">USD Cash</option>
-                        <option value="Card">Card</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Total amount</label>
-                    <input type="number" id="b-total" step="0.01" value="0.00" required>
-                </div>
-            </div>
-
-            <!-- Row 3 -->
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Paid amount</label>
-                    <input type="number" id="b-paid" step="0.01" value="0.00">
-                </div>
-
-                <div class="form-group col-2">
-                    <label>Notes</label>
-                    <input type="text" id="b-notes" placeholder="Cert level, pick-up point...">
-                </div>
-            </div>
-
-            <div class="actions-row">
-                <button type="submit" class="btn-submit" id="btn-save">Save booking</button>
-                <button type="button" class="btn-clear" onclick="resetForm()">Clear form</button>
-            </div>
+    <!-- Upload Section -->
+    <div class="upload-card">
+        <h3 class="upload-title">📤 Upload New Passport / ID Document</h3>
+        <form id="uploadForm" class="upload-form" onsubmit="uploadDocument(event)">
+            <input type="file" id="fileInput" class="file-input" accept="image/*,application/pdf" required>
+            <button type="submit" id="uploadBtn" class="btn-process">
+                ✨ Process Document
+            </button>
+            <span id="uploadStatus" class="upload-status"></span>
         </form>
     </div>
 
-    <!-- Search and Export Controls -->
+    <!-- Search Box + Export Button -->
     <div class="controls-bar">
-        <input type="text" id="search-input" class="search-input" placeholder="🔍 Search Bookings..." oninput="filterBookings()">
-        <button class="btn-export" onclick="exportToCSV()">📊 Export CSV</button>
+        <input type="text" id="search-input" class="search-input" placeholder="🔍 Search by Full Name, ID Number, Document Type, Nationality, or Date..." oninput="filterData()">
+        <button class="btn-export" onclick="exportToExcel()">📊 Export to Excel</button>
     </div>
 
-    <!-- Bookings Table -->
     <div class="table-container">
-        <table>
+        <table id="data-table">
             <thead>
-                <tr>
-                    <th>VOUCHER</th>
-                    <th>CLIENT ID</th>
-                    <th>CUSTOMER NAME</th>
-                    <th>NATIONALITY</th>
-                    <th>ACTIVITY</th>
-                    <th>SUPPLIER</th>
-                    <th>GUIDE</th>
-                    <th>TIME</th>
-                    <th>PAYMENT</th>
-                    <th>TOTAL</th>
-                    <th>PAID</th>
-                </tr>
+                <tr id="table-header"></tr>
             </thead>
-            <tbody id="bookings-table-body">
-                <tr><td colspan="11" class="empty-state">No bookings recorded yet.</td></tr>
+            <tbody id="table-body">
+                <tr>
+                    <td colspan="100%" class="empty-state">Loading documents data...</td>
+                </tr>
             </tbody>
         </table>
     </div>
-</div>
 
-<script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzM_g1qI-jPcC81KxgAttsiUy3hLc1P8PpkLz-5cuXYvWTK1yk6z9toRRNbjWsNiXW0/exec';
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwksNXtxomv6aMarw4e1npEB6B0PTBk4_a5XuQN6oTsO1nog6fjcM1V2g3u7mLny5dO0A/exec";
+        const N8N_WEBHOOK_URL = "https://Automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
+        let rawData = [];
+        let currentlyDisplayedData = [];
 
-    let allClients = {};
-    let allBookings = [];
+        function loadData() {
+            document.getElementById('connection-status').innerText = 'Loading...';
+            document.getElementById('connection-status').className = 'stat-value';
 
-    // 1. Fetch data on load
-    async function initDashboard() {
-        try {
-            const res = await fetch(SCRIPT_URL);
-            const data = await res.json();
+            const oldScript = document.getElementById('jsonp-script');
+            if (oldScript) oldScript.remove();
 
-            // Build client lookup map
-            allClients = {};
-            if (data.clients) {
-                data.clients.forEach(c => {
-                    const id = String(c[0] || '').trim();
-                    allClients[id.toLowerCase()] = {
-                        name: c[1] || '',
-                        nationality: c[4] || ''
-                    };
-                });
+            const script = document.createElement('script');
+            script.id = 'jsonp-script';
+            script.src = SCRIPT_URL;
+            script.onerror = function() {
+                document.getElementById('connection-status').innerText = 'Connection Error 🔴';
+                document.getElementById('connection-status').className = 'stat-value status-error';
+                document.getElementById('table-body').innerHTML = `
+                    <tr>
+                        <td colspan="100%" class="empty-state">
+                            ❌ Failed to load data.<br><br>
+                            Please verify Google Apps Script deployment settings.
+                        </td>
+                    </tr>`;
+            };
+            document.body.appendChild(script);
+        }
+
+        window.callback = function(data) {
+            if (!data || data.length === 0) {
+                document.getElementById('connection-status').innerText = 'No Data ⚠️';
+                return;
             }
 
-            allBookings = data.bookings || [];
-            renderTable(allBookings);
-        } catch (e) {
-            console.error("Data load error:", e);
-        }
-    }
+            document.getElementById('connection-status').innerText = 'Connected 🟢';
+            document.getElementById('connection-status').className = 'stat-value status-connected';
 
-    // 2. Auto-fetch client name & nationality on ID typing
-    function autoFetchClient(val) {
-        const cleanID = val.trim().toLowerCase();
-        const errSpan = document.getElementById('client-error');
-        const nameInput = document.getElementById('b-client-name');
-        const natInput = document.getElementById('b-nationality');
-
-        if (!cleanID) {
-            errSpan.style.display = 'none';
-            nameInput.value = '';
-            natInput.value = '';
-            return;
-        }
-
-        if (allClients[cleanID]) {
-            errSpan.style.display = 'none';
-            nameInput.value = allClients[cleanID].name;
-            natInput.value = allClients[cleanID].nationality;
-        } else {
-            errSpan.style.display = 'block';
-            nameInput.value = '';
-            natInput.value = '';
-        }
-    }
-
-    // 3. Render Bookings - Fixed Index Mapping Solution
-    function renderTable(rows) {
-        const tbody = document.getElementById('bookings-table-body');
-        tbody.innerHTML = '';
-
-        if (!rows || rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" class="empty-state">No bookings recorded yet.</td></tr>';
-            return;
-        }
-
-        rows.forEach(row => {
-            const voucher = row[0] || '';
-            const clientID = String(row[1] || '').trim();
-            const clientInfo = allClients[clientID.toLowerCase()] || { name: 'N/A', nationality: 'N/A' };
-
-            // Extract pickup time formatted safely
-            let pickupTime = String(row[7] || '');
-            if (pickupTime.includes('T')) {
-                const parts = pickupTime.split('T')[1];
-                pickupTime = parts ? parts.substring(0, 5) : pickupTime;
-            }
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${voucher}</strong></td>
-                <td>${clientID}</td>
-                <td>${clientInfo.name}</td>
-                <td>${clientInfo.nationality}</td>
-                <td>${row[2] || ''}</td>  <!-- Activity -->
-                <td>${row[3] || ''}</td>  <!-- Supplier -->
-                <td>${row[4] || ''}</td>  <!-- Guide -->
-                <td>${pickupTime}</td>    <!-- Pickup Time -->
-                <td>${row[8] || ''}</td>  <!-- Payment Method -->
-                <td>$${row[9] || '0'}</td> <!-- Total -->
-                <td>$${row[10] || '0'}</td><!-- Paid -->
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    // 4. Save Booking Function
-    async function saveBooking(e) {
-        e.preventDefault();
-        const btn = document.getElementById('btn-save');
-        btn.disabled = true;
-        btn.innerText = 'Saving...';
-
-        const payload = {
-            action: 'addBooking',
-            voucher: document.getElementById('b-voucher').value,
-            clientID: document.getElementById('b-client-id').value,
-            activity: document.getElementById('b-activity').value,
-            supplier: document.getElementById('b-supplier').value,
-            guide: document.getElementById('b-guide').value,
-            guests: document.getElementById('b-guests').value,
-            date: document.getElementById('b-date').value,
-            pickupTime: document.getElementById('b-time').value,
-            paymentMethod: document.getElementById('b-payment').value,
-            total: document.getElementById('b-total').value,
-            paid: document.getElementById('b-paid').value,
-            status: 'Confirmed',
-            notes: document.getElementById('b-notes').value
+            rawData = data;
+            currentlyDisplayedData = data;
+            renderTable(rawData);
         };
 
-        try {
-            await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
-            resetForm();
-            await initDashboard();
-        } catch (err) {
-            alert("Error saving booking");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = 'Save booking';
+        function renderTable(data) {
+            const headerRow = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
+
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="100%" class="empty-state">No matching records found</td></tr>';
+                document.getElementById('total-records').innerText = '0';
+                currentlyDisplayedData = [];
+                return;
+            }
+
+            currentlyDisplayedData = data;
+
+            // Headers
+            const headers = data[0];
+            headerRow.innerHTML = '<th>#</th>';
+            headers.forEach(h => {
+                headerRow.innerHTML += `<th>${h}</th>`;
+            });
+
+            // Body
+            const rows = data.slice(1);
+            document.getElementById('total-records').innerText = rows.length;
+
+            tableBody.innerHTML = '';
+            rows.forEach((row, index) => {
+                let tr = '<tr>';
+                tr += `<td>${index + 1}</td>`;
+                row.forEach(cell => {
+                    tr += `<td>${cell !== undefined && cell !== null ? cell : ''}</td>`;
+                });
+                tr += '</tr>';
+                tableBody.innerHTML += tr;
+            });
         }
-    }
 
-    // 5. Search Filter
-    function filterBookings() {
-        const query = document.getElementById('search-input').value.toLowerCase();
-        const filtered = allBookings.filter(r => {
-            const str = r.join(' ').toLowerCase();
-            return str.includes(query);
-        });
-        renderTable(filtered);
-    }
+        function filterData() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            if (!query) {
+                renderTable(rawData);
+                return;
+            }
 
-    function resetForm() {
-        document.getElementById('booking-form').reset();
-        document.getElementById('client-error').style.display = 'none';
-    }
+            if (rawData.length <= 1) return;
 
-    initDashboard();
-</script>
+            const headers = rawData[0];
+            const filteredRows = rawData.slice(1).filter(row => {
+                return row.some(cell => String(cell).toLowerCase().includes(query));
+            });
+
+            renderTable([headers, ...filteredRows]);
+        }
+
+        function exportToExcel() {
+            if (!currentlyDisplayedData || currentlyDisplayedData.length <= 1) {
+                alert("No data available to export!");
+                return;
+            }
+
+            const headers = ["#", ...currentlyDisplayedData[0]];
+            const exportRows = currentlyDisplayedData.slice(1).map((row, idx) => [idx + 1, ...row]);
+            const fullExportData = [headers, ...exportRows];
+
+            const worksheet = XLSX.utils.aoa_to_sheet(fullExportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Documents Data");
+
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `ID_Licenses_Data_${today}.xlsx`);
+        }
+
+        async function uploadDocument(event) {
+            event.preventDefault();
+            const fileInput = document.getElementById('fileInput');
+            const statusText = document.getElementById('uploadStatus');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (!fileInput.files[0]) return;
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            uploadBtn.disabled = true;
+            statusText.style.color = "#38bdf8";
+            statusText.innerText = "⏳ Extracting ID details via AI...";
+
+            try {
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (response.ok) {
+                    statusText.style.color = "#4ade80";
+                    statusText.innerText = "✅ Successfully Processed!";
+                    fileInput.value = "";
+                    setTimeout(() => {
+                        statusText.innerText = "";
+                        loadData();
+                    }, 2000);
+                } else {
+                    statusText.style.color = "#f87171";
+                    statusText.innerText = "❌ Processing failed.";
+                }
+            } catch (err) {
+                statusText.style.color = "#f87171";
+                statusText.innerText = "❌ Connection Error to Workflow.";
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        }
+
+        window.onload = loadData;
+    </script>
 </body>
 </html>
