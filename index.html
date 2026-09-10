@@ -529,39 +529,46 @@
             }
         }
 
-        function loadData() {
+        // تم تعديل هذه الدالة لتكون متسلسلة (Sequential) لمنع سباق البيانات
+        async function loadData() {
             document.getElementById('connection-status').innerText = 'Loading...';
             const timestamp = new Date().getTime();
 
-            const script1 = document.createElement('script');
-            script1.src = `${SCRIPT_URL}?sheet=الورقة1&callback=callbackSheet1&_t=${timestamp}`;
-            document.body.appendChild(script1);
+            // 1. جلب بيانات العملاء أولاً وانتظار الانتهاء منها
+            await new Promise((resolve) => {
+                window.callbackSheet1 = function(data) {
+                    if (data && data.length > 0) {
+                        document.getElementById('connection-status').innerText = 'Connected 🟢';
+                        document.getElementById('connection-status').className = 'stat-value status-connected';
+                        rawData = data;
+                        
+                        const headers = data[0].map(h => String(h).trim().toLowerCase());
+                        const idIndex = headers.indexOf('id_number');
+                        const nameIndex = headers.indexOf('full_name');
+                        const authorityIndex = headers.indexOf('issuing_authority');
 
+                        clientMap = {};
+                        data.slice(1).forEach(row => {
+                            const id = String(idIndex !== -1 ? row[idIndex] : (row[3] || row[0])).trim().toLowerCase();
+                            const name = nameIndex !== -1 ? row[nameIndex] : row[0];
+                            const authority = authorityIndex !== -1 ? row[authorityIndex] : (row[2] || 'N/A');
+                            if (id) clientMap[id] = { name: name || 'Unknown', nationality: authority || 'N/A' };
+                        });
+                        renderTable(rawData);
+                    }
+                    resolve();
+                };
+
+                const script1 = document.createElement('script');
+                script1.src = `${SCRIPT_URL}?sheet=الورقة1&callback=callbackSheet1&_t=${timestamp}`;
+                document.body.appendChild(script1);
+            });
+
+            // 2. بعد أن جاهزية الـ clientMap تماماً، يتم جلب الحجوزات وعرضها
             const script2 = document.createElement('script');
             script2.src = `${SCRIPT_URL}?sheet=Sheet2&callback=callbackSheet2&_t=${timestamp}`;
             document.body.appendChild(script2);
         }
-
-        window.callbackSheet1 = function(data) {
-            if (!data || data.length === 0) return;
-            document.getElementById('connection-status').innerText = 'Connected 🟢';
-            document.getElementById('connection-status').className = 'stat-value status-connected';
-            rawData = data;
-            
-            const headers = data[0].map(h => String(h).trim().toLowerCase());
-            const idIndex = headers.indexOf('id_number');
-            const nameIndex = headers.indexOf('full_name');
-            const authorityIndex = headers.indexOf('issuing_authority');
-
-            clientMap = {};
-            data.slice(1).forEach(row => {
-                const id = String(idIndex !== -1 ? row[idIndex] : (row[3] || row[0])).trim().toLowerCase();
-                const name = nameIndex !== -1 ? row[nameIndex] : row[0];
-                const authority = authorityIndex !== -1 ? row[authorityIndex] : (row[2] || 'N/A');
-                if (id) clientMap[id] = { name: name || 'Unknown', nationality: authority || 'N/A' };
-            });
-            renderTable(rawData);
-        };
 
         window.callbackSheet2 = function(data) {
             if (!data || data.length <= 1) {
@@ -589,7 +596,7 @@
                 const status = row[14] || 'Pending';
 
                 const tr = document.createElement('tr');
-                tr.setAttribute('data-voucher', voucher); // إضافة معرف للصف لتحديثه مباشره
+                tr.setAttribute('data-voucher', voucher);
                 
                 let html = `
                     <td>${voucher}</td>
@@ -625,7 +632,6 @@
         }
 
         async function updateBookingStatus(voucherNo, newStatus) {
-            // تحديث فوري لواجهة المستخدم (UI Optimization) قبل انتظار السيرفر لتجربة سريعة جداً
             const rowElem = document.querySelector(`tr[data-voucher="${voucherNo}"]`);
             if (rowElem) {
                 const statusCell = rowElem.querySelector('.status-cell');
@@ -635,11 +641,10 @@
                     statusCell.innerHTML = `<span class="badge-status status-${newStatus}">${newStatus}</span>`;
                 }
                 if (actionsCell) {
-                    actionsCell.innerHTML = `-`; // إزالة الأزرار فوراً
+                    actionsCell.innerHTML = `-`;
                 }
             }
 
-            // تحديث البيانات في الـ rawBookingsData لتجنب عودتها عند البحث أو الفلترة
             for (let i = 1; i < rawBookingsData.length; i++) {
                 if (String(rawBookingsData[i][0]) === String(voucherNo)) {
                     rawBookingsData[i][14] = newStatus;
