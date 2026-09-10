@@ -339,6 +339,13 @@
 
     <!-- TAB 1: Daily Operations -->
     <div id="daily-operations" class="tab-content active">
+        <div class="header">
+            <div class="title-group">
+                <h1>🗓️ Daily Bookings & Operations</h1>
+            </div>
+            <button class="btn-refresh" onclick="loadData()">🔄 Refresh Bookings</button>
+        </div>
+
         <div class="card">
             <h3 class="card-title">📝 New Booking</h3>
             <form id="bookingForm" onsubmit="submitBooking(event)">
@@ -592,7 +599,9 @@
                 
                 resetBookingForm();
                 setTimeout(() => status.innerText = "", 4000);
-                loadData();
+                
+                // إضافة مهلة صغيرة لضمان إتمام Google Sheet لعملية الإضافة قبل إعادة الاستعلام
+                setTimeout(loadData, 1500);
             } catch (err) {
                 status.style.color = "#f87171";
                 status.innerText = "❌ Error saving booking";
@@ -604,18 +613,21 @@
         function loadData() {
             document.getElementById('connection-status').innerText = 'Loading...';
             
+            // إضافة Timestamp لمنع الكاش (Cache-Busting)
+            const timestamp = new Date().getTime();
+
             const oldScript1 = document.getElementById('jsonp-script1');
             if (oldScript1) oldScript1.remove();
             const script1 = document.createElement('script');
             script1.id = 'jsonp-script1';
-            script1.src = SCRIPT_URL + "?sheet=Sheet1&callback=callbackSheet1";
+            script1.src = `${SCRIPT_URL}?sheet=Sheet1&callback=callbackSheet1&_t=${timestamp}`;
             document.body.appendChild(script1);
 
             const oldScript2 = document.getElementById('jsonp-script2');
             if (oldScript2) oldScript2.remove();
             const script2 = document.createElement('script');
             script2.id = 'jsonp-script2';
-            script2.src = SCRIPT_URL + "?sheet=Sheet2&callback=callbackSheet2";
+            script2.src = `${SCRIPT_URL}?sheet=Sheet2&callback=callbackSheet2&_t=${timestamp}`;
             document.body.appendChild(script2);
         }
 
@@ -625,7 +637,6 @@
             document.getElementById('connection-status').className = 'stat-value status-connected';
             rawData = data;
             
-            // Map headers dynamically to match columns in Sheet1
             const headers = data[0].map(h => String(h).trim().toLowerCase());
             
             const idIndex = headers.indexOf('id_number');
@@ -661,38 +672,37 @@
         };
 
         function renderBookingsTable(rows) {
-    const tbody = document.getElementById('bookings-table-body');
-    tbody.innerHTML = '';
-    rows.forEach(row => {
-        const voucher = row[0] || '';
-        const clientID = String(row[1] || '').trim();
-        const key = clientID.toLowerCase();
+            const tbody = document.getElementById('bookings-table-body');
+            tbody.innerHTML = '';
+            rows.forEach(row => {
+                const voucher = row[0] || '';
+                const clientID = String(row[1] || '').trim();
+                const key = clientID.toLowerCase();
 
-        const clientInfo = clientMap[key] || { name: 'N/A (Not Found)', nationality: 'N/A' };
+                const clientInfo = clientMap[key] || { name: 'N/A (Not Found)', nationality: 'N/A' };
 
-        // تنسيق الوقت لحل مشكلة 1899-12-30T...
-        let timeVal = row[9] || '';
-        if (timeVal.includes('T')) {
-            timeVal = timeVal.split('T')[1].substring(0, 5);
+                let timeVal = row[9] || '';
+                if (timeVal.includes('T')) {
+                    timeVal = timeVal.split('T')[1].substring(0, 5);
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${voucher}</td>
+                    <td><strong>${clientID}</strong></td>
+                    <td>${clientInfo.name}</td>
+                    <td>${clientInfo.nationality}</td>
+                    <td>${row[4] || ''}</td>
+                    <td>${row[5] || ''}</td>
+                    <td>${row[6] || ''}</td>
+                    <td>${timeVal}</td>
+                    <td>${row[10] || ''}</td>
+                    <td>$${row[11] || '0'}</td>
+                    <td>$${row[12] || '0'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${voucher}</td>
-            <td><strong>${clientID}</strong></td>
-            <td>${clientInfo.name}</td>
-            <td>${clientInfo.nationality}</td>
-            <td>${row[4] || ''}</td>  <!-- Activity -->
-            <td>${row[5] || ''}</td>  <!-- Supplier -->
-            <td>${row[6] || ''}</td>  <!-- Guide -->
-            <td>${timeVal}</td>       <!-- Pickup Time -->
-            <td>${row[10] || ''}</td> <!-- Payment Method -->
-            <td>$${row[11] || '0'}</td> <!-- Total -->
-            <td>$${row[12] || '0'}</td> <!-- Paid -->
-        `;
-        tbody.appendChild(tr);
-    });
-}
 
         function filterBookings() {
             const query = document.getElementById('search-booking').value.toLowerCase().trim();
