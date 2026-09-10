@@ -247,7 +247,7 @@
                 <button class="btn-refresh" onclick="loadData()">🔄 Refresh Bookings</button>
             </div>
 
-            <!-- نموذج إضافة حجز جديد (سيتم إخفاؤه تلقائياً للمدير) -->
+            <!-- نموذج إضافة حجز جديد (يخفى تماماً للمدير) -->
             <div class="card" id="newBookingCard">
                 <h3 class="card-title">📝 New Booking</h3>
                 <form id="bookingForm" onsubmit="submitBooking(event)">
@@ -430,7 +430,6 @@
             document.getElementById('appContainer').style.display = 'block';
             document.getElementById('currentUserDisplay').innerText = `👤 ${currentUser.name} (${currentUser.role.toUpperCase()})`;
 
-            // إذا كان المستخدم Manager، نقوم بإخفاء قسم إضافة حجز جديد تماماً
             if (currentUser && currentUser.role.toLowerCase() === 'manager') {
                 const newBookingCard = document.getElementById('newBookingCard');
                 if (newBookingCard) {
@@ -583,13 +582,15 @@
             }
 
             rows.forEach(row => {
-                const voucher = row[0] || '';
+                const voucher = String(row[0] || '');
                 const clientID = String(row[1] || '').trim();
                 const clientInfo = clientMap[clientID.toLowerCase()] || { name: 'N/A', nationality: 'N/A' };
                 let timeVal = (row[9] || '').includes('T') ? row[9].split('T')[1].substring(0, 5) : (row[9] || '');
                 const status = row[14] || 'Pending';
 
                 const tr = document.createElement('tr');
+                tr.setAttribute('data-voucher', voucher); // إضافة معرف للصف لتحديثه مباشره
+                
                 let html = `
                     <td>${voucher}</td>
                     <td><strong>${clientID}</strong></td>
@@ -602,20 +603,19 @@
                     <td>${row[10] || ''}</td>
                     <td>$${row[11] || '0'}</td>
                     <td>$${row[12] || '0'}</td>
-                    <td><span class="badge-status status-${status}">${status}</span></td>
+                    <td class="status-cell"><span class="badge-status status-${status}">${status}</span></td>
                 `;
 
                 if (isManager) {
-                    // إظهار الأزرار فقط إذا كانت الحالة Pending، وإلا يتم ترك الخلية فارغة تماماً لتختفي الأزرار
                     if (status.toLowerCase() === 'pending') {
                         html += `
-                            <td>
+                            <td class="actions-cell">
                                 <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">Accept</button>
                                 <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">Cancel</button>
                             </td>
                         `;
                     } else {
-                        html += `<td>-</td>`;
+                        html += `<td class="actions-cell">-</td>`;
                     }
                 }
 
@@ -625,7 +625,27 @@
         }
 
         async function updateBookingStatus(voucherNo, newStatus) {
-            if (!confirm(`Are you sure you want to set status to ${newStatus} for Voucher ${voucherNo}?`)) return;
+            // تحديث فوري لواجهة المستخدم (UI Optimization) قبل انتظار السيرفر لتجربة سريعة جداً
+            const rowElem = document.querySelector(`tr[data-voucher="${voucherNo}"]`);
+            if (rowElem) {
+                const statusCell = rowElem.querySelector('.status-cell');
+                const actionsCell = rowElem.querySelector('.actions-cell');
+                
+                if (statusCell) {
+                    statusCell.innerHTML = `<span class="badge-status status-${newStatus}">${newStatus}</span>`;
+                }
+                if (actionsCell) {
+                    actionsCell.innerHTML = `-`; // إزالة الأزرار فوراً
+                }
+            }
+
+            // تحديث البيانات في الـ rawBookingsData لتجنب عودتها عند البحث أو الفلترة
+            for (let i = 1; i < rawBookingsData.length; i++) {
+                if (String(rawBookingsData[i][0]) === String(voucherNo)) {
+                    rawBookingsData[i][14] = newStatus;
+                    break;
+                }
+            }
 
             try {
                 await fetch(SCRIPT_URL, {
@@ -634,10 +654,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: "updateStatus", voucherNo: voucherNo, status: newStatus })
                 });
-                alert("Status updated successfully!");
-                setTimeout(loadData, 1500);
             } catch (err) {
-                alert("Failed to update status.");
+                console.error("Failed to sync status update with server.");
             }
         }
 
