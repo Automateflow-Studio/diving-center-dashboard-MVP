@@ -334,7 +334,7 @@
             </div>
         </div>
 
-        <!-- TAB 2: ID & Licenses (Sales Only) -->
+        <!-- TAB 2: ID & Licenses -->
         <div id="id-licenses" class="tab-content">
             <div class="header">
                 <div class="title-group"><h1>🪪 ID & License Management Dashboard</h1></div>
@@ -423,16 +423,11 @@
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwBa1h3q9oyPOjq2XY1w5Yqh3heC6XmNO-50oJMSQqmePN8RNnH4aA1v2IJyMk3_CmTw/exec";
-        const N8N_WEBHOOK_URL = "https://Automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
         
         let rawData = [];
         let rawBookingsData = [];
         let clientMap = {};
         let currentUser = null;
-
-        let weeklyChartInstance = null;
-        let activityChartInstance = null;
-        let paymentChartInstance = null;
 
         window.onload = function() {
             const savedUser = sessionStorage.getItem('currentUser');
@@ -484,17 +479,19 @@
             document.getElementById('currentUserDisplay').innerText = `👤 ${currentUser.name} (${currentUser.role.toUpperCase()})`;
 
             const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
+            
+            // التحكم برؤية التابات بناء على الصلاحيات
             if (isManager) {
+                // إخفاء تاب ID & Licenses للمدير
+                document.getElementById('idLicensesTabBtn').style.display = 'none';
+                
+                // إخفاء كارد الإضافة الجديدة للمدير وإظهار التحليلات
                 const newBookingCard = document.getElementById('newBookingCard');
                 if (newBookingCard) newBookingCard.style.display = 'none';
-                
-                // إخفاء تبويب الهويات والتراخيص للمدير وإظهار التحليلات
-                document.getElementById('idLicensesTabBtn').style.display = 'none';
                 document.getElementById('analyticsTabBtn').style.display = 'inline-block';
             } else {
-                // للمستخدمين من نوع Sales
+                // إظهار تاب ID & Licenses للموظف/السيلز
                 document.getElementById('idLicensesTabBtn').style.display = 'inline-block';
-                document.getElementById('analyticsTabBtn').style.display = 'none';
             }
 
             document.getElementById('bookingDate').valueAsDate = new Date();
@@ -511,10 +508,6 @@
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             e.target.classList.add('active');
             document.getElementById(tabId).classList.add('active');
-
-            if (tabId === 'analytics') {
-                renderAnalytics();
-            }
         }
 
         function lookupClientInfo() {
@@ -543,65 +536,19 @@
             }
         }
 
-        async function submitBooking(e) {
-            e.preventDefault();
-            const btn = document.getElementById('saveBookingBtn');
-            const status = document.getElementById('bookingStatus');
-            const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
-
-            if (!clientMap[clientIDInput]) {
-                alert("⚠️ Client ID not found in ID & Licenses database! Upload passport first.");
-                return;
-            }
-
-            btn.disabled = true;
-            status.style.color = "#38bdf8";
-            status.innerText = "⏳ Saving booking...";
-
-            const payload = {
-                voucherNo: document.getElementById('voucherNo').value,
-                clientID: document.getElementById('clientID').value.trim(),
-                activity: document.getElementById('activity').value,
-                supplier: document.getElementById('supplier').value,
-                guide: document.getElementById('guide').value,
-                guests: document.getElementById('guests').value,
-                bookingDate: document.getElementById('bookingDate').value,
-                pickupTime: document.getElementById('pickupTime').value,
-                paymentMethod: document.getElementById('paymentMethod').value,
-                totalAmount: document.getElementById('totalAmount').value,
-                paidAmount: document.getElementById('paidAmount').value,
-                notes: document.getElementById('notes').value
-            };
-
-            try {
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                status.style.color = "#4ade80";
-                status.innerText = "✅ Booking Saved!";
-                document.getElementById('bookingForm').reset();
-                setTimeout(() => status.innerText = "", 3000);
-                setTimeout(loadData, 1500);
-            } catch (err) {
-                status.style.color = "#f87171";
-                status.innerText = "❌ Error saving booking";
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
         async function loadData() {
-            document.getElementById('connection-status').innerText = 'Loading...';
+            const statusElem = document.getElementById('connection-status');
+            if (statusElem) statusElem.innerText = 'Loading...';
             const timestamp = new Date().getTime();
 
+            // جلب ورقة الـ IDs للربط الخلفي بدون اشتراط عرض التاب
             await new Promise((resolve) => {
                 window.callbackSheet1 = function(data) {
                     if (data && data.length > 0) {
-                        document.getElementById('connection-status').innerText = 'Connected 🟢';
-                        document.getElementById('connection-status').className = 'stat-value status-connected';
+                        if (statusElem) {
+                            statusElem.innerText = 'Connected 🟢';
+                            statusElem.className = 'stat-value status-connected';
+                        }
                         rawData = data;
                         
                         const headers = data[0].map(h => String(h).trim().toLowerCase());
@@ -625,16 +572,17 @@
                                 };
                             }
                         });
-                        renderTable(rawData);
                     }
                     resolve();
                 };
 
                 const script1 = document.createElement('script');
+                // يرجى التأكد من مطابقة اسم الورقة في Google Sheets
                 script1.src = `${SCRIPT_URL}?sheet=الورقة1&callback=callbackSheet1&_t=${timestamp}`;
                 document.body.appendChild(script1);
             });
 
+            // جلب ورقة الحجوزات
             const script2 = document.createElement('script');
             script2.src = `${SCRIPT_URL}?sheet=Sheet2&callback=callbackSheet2&_t=${timestamp}`;
             document.body.appendChild(script2);
@@ -647,10 +595,6 @@
             }
             rawBookingsData = data;
             renderBookingsTable(data.slice(1));
-
-            if (document.getElementById('analytics').classList.contains('active')) {
-                renderAnalytics();
-            }
         };
 
         function renderBookingsTable(rows) {
@@ -688,17 +632,12 @@
                 `;
 
                 if (isManager) {
-                    if (status.toLowerCase() === 'pending') {
-                        html += `
-                            <td class="actions-cell">
+                    html += `<td class="actions-cell">
                                 <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">Accept</button>
                                 <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">Cancel</button>
-                            </td>
-                        `;
-                    } else {
-                        html += `<td class="actions-cell">-</td>`;
-                    }
+                             </td>`;
                 }
+
                 tr.innerHTML = html;
                 tbody.appendChild(tr);
             });
