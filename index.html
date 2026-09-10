@@ -247,6 +247,7 @@
                 <button class="btn-refresh" onclick="loadData()">🔄 Refresh Bookings</button>
             </div>
 
+            <!-- نموذج إضافة حجز جديد (سيتم إخفاؤه تلقائياً للمدير) -->
             <div class="card" id="newBookingCard">
                 <h3 class="card-title">📝 New Booking</h3>
                 <form id="bookingForm" onsubmit="submitBooking(event)">
@@ -429,6 +430,14 @@
             document.getElementById('appContainer').style.display = 'block';
             document.getElementById('currentUserDisplay').innerText = `👤 ${currentUser.name} (${currentUser.role.toUpperCase()})`;
 
+            // إذا كان المستخدم Manager، نقوم بإخفاء قسم إضافة حجز جديد تماماً
+            if (currentUser && currentUser.role.toLowerCase() === 'manager') {
+                const newBookingCard = document.getElementById('newBookingCard');
+                if (newBookingCard) {
+                    newBookingCard.style.display = 'none';
+                }
+            }
+
             document.getElementById('bookingDate').valueAsDate = new Date();
             loadData();
         }
@@ -525,7 +534,6 @@
             document.getElementById('connection-status').innerText = 'Loading...';
             const timestamp = new Date().getTime();
 
-            // تم تعديل اسم الشريحة هنا ليطابق "الورقة1"
             const script1 = document.createElement('script');
             script1.src = `${SCRIPT_URL}?sheet=الورقة1&callback=callbackSheet1&_t=${timestamp}`;
             document.body.appendChild(script1);
@@ -569,7 +577,7 @@
             const tbody = document.getElementById('bookings-table-body');
             tbody.innerHTML = '';
             
-            const isManager = currentUser && currentUser.role === 'manager';
+            const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
             if (isManager) {
                 document.getElementById('thActions').style.display = 'table-cell';
             }
@@ -598,12 +606,17 @@
                 `;
 
                 if (isManager) {
-                    html += `
-                        <td>
-                            <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">Accept</button>
-                            <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">Cancel</button>
-                        </td>
-                    `;
+                    // إظهار الأزرار فقط إذا كانت الحالة Pending، وإلا يتم ترك الخلية فارغة تماماً لتختفي الأزرار
+                    if (status.toLowerCase() === 'pending') {
+                        html += `
+                            <td>
+                                <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">Accept</button>
+                                <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">Cancel</button>
+                            </td>
+                        `;
+                    } else {
+                        html += `<td>-</td>`;
+                    }
                 }
 
                 tr.innerHTML = html;
