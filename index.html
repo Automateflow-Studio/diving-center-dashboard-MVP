@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Diving Center Management Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -20,7 +21,6 @@
             min-height: 100vh;
         }
 
-        /* Login Overlay */
         #login-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -46,9 +46,7 @@
             text-align: center;
         }
 
-        .app-container {
-            display: none;
-        }
+        .app-container { display: none; }
 
         .tab-navigation {
             display: flex;
@@ -75,13 +73,8 @@
             color: white;
         }
 
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
         .header {
             display: flex;
@@ -92,10 +85,7 @@
             border-bottom: 1px solid #1e293b;
         }
 
-        .title-group h1 {
-            font-size: 1.5rem;
-            color: #38bdf8;
-        }
+        .title-group h1 { font-size: 1.5rem; color: #38bdf8; }
 
         .user-info {
             display: flex;
@@ -129,7 +119,7 @@
 
         .stats-grid, .booking-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -144,6 +134,9 @@
 
         .stat-title { font-size: 0.875rem; color: #94a3b8; margin-bottom: 8px; }
         .stat-value { font-size: 1.875rem; font-weight: bold; }
+        .stat-trend { font-size: 0.8rem; font-weight: 600; margin-top: 6px; }
+        .trend-up { color: #4ade80; }
+        .trend-down { color: #f87171; }
         .status-connected { color: #4ade80; }
 
         .form-group {
@@ -204,11 +197,20 @@
         .btn-action { padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.75rem; font-weight: bold; margin-right: 4px; }
         .btn-accept { background: #22c55e; color: white; }
         .btn-cancel { background: #ef4444; color: white; }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .chart-box {
+            position: relative;
+            height: 280px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- شاشة تسجيل الدخول -->
     <div id="login-overlay">
         <div class="login-card">
             <h2>🔐 Diving Center Login</h2>
@@ -227,11 +229,11 @@
         </div>
     </div>
 
-    <!-- التطبيق الرئيسي -->
     <div id="appContainer" class="app-container">
         <div class="tab-navigation">
             <button class="tab-btn active" onclick="switchTab(event, 'daily-operations')">Daily Operations</button>
             <button class="tab-btn" onclick="switchTab(event, 'id-licenses')">ID & Licenses</button>
+            <button class="tab-btn" id="analyticsTabBtn" style="display:none;" onclick="switchTab(event, 'analytics')">📊 Analytics & Reports</button>
             <div style="margin-left: auto;" class="user-info">
                 <span id="currentUserDisplay"></span>
                 <button class="btn-logout" onclick="logout()">Sign Out</button>
@@ -247,7 +249,6 @@
                 <button class="btn-refresh" onclick="loadData()">🔄 Refresh Bookings</button>
             </div>
 
-            <!-- نموذج إضافة حجز جديد (يخفى تماماً للمدير) -->
             <div class="card" id="newBookingCard">
                 <h3 class="card-title">📝 New Booking</h3>
                 <form id="bookingForm" onsubmit="submitBooking(event)">
@@ -370,6 +371,54 @@
                 </table>
             </div>
         </div>
+
+        <!-- TAB 3: Analytics (Manager Only) -->
+        <div id="analytics" class="tab-content">
+            <div class="header">
+                <div class="title-group"><h1>📊 Executive Analytics Dashboard</h1></div>
+                <button class="btn-refresh" onclick="loadData()">🔄 Refresh Analytics</button>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">New Clients (This Week)</div>
+                    <div class="stat-value" id="kpi-weekly-clients">0</div>
+                    <div class="stat-trend" id="kpi-weekly-growth">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">New Clients (This Month)</div>
+                    <div class="stat-value" id="kpi-monthly-clients">0</div>
+                    <div class="stat-trend" id="kpi-monthly-growth">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Paid vs Pending Rate</div>
+                    <div class="stat-value" id="kpi-paid-rate">0%</div>
+                    <div class="stat-trend" id="kpi-paid-subtext" style="color:#94a3b8;">Fully Paid Bookings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Monthly Revenue Collected</div>
+                    <div class="stat-value" id="kpi-monthly-revenue" style="color:#4ade80;">$0</div>
+                    <div class="stat-trend" id="kpi-revenue-growth">--</div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <div class="card">
+                    <h3 style="color:#38bdf8; margin-bottom:15px;">📈 Weekly New Clients Acquisition</h3>
+                    <div class="chart-box"><canvas id="weeklyClientsChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h3 style="color:#38bdf8; margin-bottom:15px;">🤿 Popularity by Activity</h3>
+                    <div class="chart-box"><canvas id="activitiesChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h3 style="color:#38bdf8; margin-bottom:15px;">💵 Payment Collection Status</h3>
+                    <div class="chart-box"><canvas id="paymentChart"></canvas></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -380,6 +429,10 @@
         let rawBookingsData = [];
         let clientMap = {};
         let currentUser = null;
+
+        let weeklyChartInstance = null;
+        let activityChartInstance = null;
+        let paymentChartInstance = null;
 
         window.onload = function() {
             const savedUser = sessionStorage.getItem('currentUser');
@@ -430,11 +483,11 @@
             document.getElementById('appContainer').style.display = 'block';
             document.getElementById('currentUserDisplay').innerText = `👤 ${currentUser.name} (${currentUser.role.toUpperCase()})`;
 
-            if (currentUser && currentUser.role.toLowerCase() === 'manager') {
+            const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
+            if (isManager) {
                 const newBookingCard = document.getElementById('newBookingCard');
-                if (newBookingCard) {
-                    newBookingCard.style.display = 'none';
-                }
+                if (newBookingCard) newBookingCard.style.display = 'none';
+                document.getElementById('analyticsTabBtn').style.display = 'inline-block';
             }
 
             document.getElementById('bookingDate').valueAsDate = new Date();
@@ -451,6 +504,10 @@
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             e.target.classList.add('active');
             document.getElementById(tabId).classList.add('active');
+
+            if (tabId === 'analytics') {
+                renderAnalytics();
+            }
         }
 
         function lookupClientInfo() {
@@ -529,12 +586,10 @@
             }
         }
 
-        // تم تعديل هذه الدالة لتكون متسلسلة (Sequential) لمنع سباق البيانات
         async function loadData() {
             document.getElementById('connection-status').innerText = 'Loading...';
             const timestamp = new Date().getTime();
 
-            // 1. جلب بيانات العملاء أولاً وانتظار الانتهاء منها
             await new Promise((resolve) => {
                 window.callbackSheet1 = function(data) {
                     if (data && data.length > 0) {
@@ -546,13 +601,22 @@
                         const idIndex = headers.indexOf('id_number');
                         const nameIndex = headers.indexOf('full_name');
                         const authorityIndex = headers.indexOf('issuing_authority');
+                        const createdAtIndex = headers.indexOf('created_at');
 
                         clientMap = {};
                         data.slice(1).forEach(row => {
                             const id = String(idIndex !== -1 ? row[idIndex] : (row[3] || row[0])).trim().toLowerCase();
                             const name = nameIndex !== -1 ? row[nameIndex] : row[0];
                             const authority = authorityIndex !== -1 ? row[authorityIndex] : (row[2] || 'N/A');
-                            if (id) clientMap[id] = { name: name || 'Unknown', nationality: authority || 'N/A' };
+                            const createdAt = createdAtIndex !== -1 ? row[createdAtIndex] : null;
+
+                            if (id) {
+                                clientMap[id] = { 
+                                    name: name || 'Unknown', 
+                                    nationality: authority || 'N/A',
+                                    createdAt: createdAt
+                                };
+                            }
                         });
                         renderTable(rawData);
                     }
@@ -564,7 +628,6 @@
                 document.body.appendChild(script1);
             });
 
-            // 2. بعد أن جاهزية الـ clientMap تماماً، يتم جلب الحجوزات وعرضها
             const script2 = document.createElement('script');
             script2.src = `${SCRIPT_URL}?sheet=Sheet2&callback=callbackSheet2&_t=${timestamp}`;
             document.body.appendChild(script2);
@@ -577,6 +640,10 @@
             }
             rawBookingsData = data;
             renderBookingsTable(data.slice(1));
+
+            if (document.getElementById('analytics').classList.contains('active')) {
+                renderAnalytics();
+            }
         };
 
         function renderBookingsTable(rows) {
@@ -636,13 +703,8 @@
             if (rowElem) {
                 const statusCell = rowElem.querySelector('.status-cell');
                 const actionsCell = rowElem.querySelector('.actions-cell');
-                
-                if (statusCell) {
-                    statusCell.innerHTML = `<span class="badge-status status-${newStatus}">${newStatus}</span>`;
-                }
-                if (actionsCell) {
-                    actionsCell.innerHTML = `-`;
-                }
+                if (statusCell) statusCell.innerHTML = `<span class="badge-status status-${newStatus}">${newStatus}</span>`;
+                if (actionsCell) actionsCell.innerHTML = `-`;
             }
 
             for (let i = 1; i < rawBookingsData.length; i++) {
@@ -696,6 +758,151 @@
                 row.forEach(cell => tr += `<td>${cell || ''}</td>`);
                 tr += '</tr>';
                 tableBody.innerHTML += tr;
+            });
+        }
+
+        /* -------------------------------------------------------------
+           دالة تحليل البيانات والرسم البياني (Analytics Core Engine)
+        ------------------------------------------------------------- */
+        function renderAnalytics() {
+            if (!rawData || rawData.length <= 1) return;
+
+            const now = new Date();
+            const startOfThisWeek = new Date(now);
+            startOfThisWeek.setDate(now.getDate() - now.getDay());
+            startOfThisWeek.setHours(0,0,0,0);
+
+            const startOfLastWeek = new Date(startOfThisWeek);
+            startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
+
+            const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+            // 1. تحليل العملاء بناءً على created_at من الورقة الأولى
+            let thisWeekClients = 0;
+            let lastWeekClients = 0;
+            let thisMonthClients = 0;
+            let lastMonthClients = 0;
+
+            const headers1 = rawData[0].map(h => String(h).trim().toLowerCase());
+            const createdAtIndex = headers1.indexOf('created_at');
+
+            rawData.slice(1).forEach(row => {
+                const dateStr = createdAtIndex !== -1 ? row[createdAtIndex] : row[0];
+                if (!dateStr) return;
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return;
+
+                if (d >= startOfThisWeek) thisWeekClients++;
+                else if (d >= startOfLastWeek && d < startOfThisWeek) lastWeekClients++;
+
+                if (d >= startOfThisMonth) thisMonthClients++;
+                else if (d >= startOfLastMonth && d <= endOfLastMonth) lastMonthClients++;
+            });
+
+            document.getElementById('kpi-weekly-clients').innerText = thisWeekClients;
+            document.getElementById('kpi-monthly-clients').innerText = thisMonthClients;
+
+            // حساب نسبة التغير للأسبوع
+            const weeklyGrowth = lastWeekClients === 0 ? (thisWeekClients > 0 ? 100 : 0) : Math.round(((thisWeekClients - lastWeekClients) / lastWeekClients) * 100);
+            const weeklyGrowthElem = document.getElementById('kpi-weekly-growth');
+            weeklyGrowthElem.innerText = `${weeklyGrowth >= 0 ? '▲ +' : '▼ '}${weeklyGrowth}% vs last week`;
+            weeklyGrowthElem.className = `stat-trend ${weeklyGrowth >= 0 ? 'trend-up' : 'trend-down'}`;
+
+            // حساب نسبة التغير للشهر
+            const monthlyGrowth = lastMonthClients === 0 ? (thisMonthClients > 0 ? 100 : 0) : Math.round(((thisMonthClients - lastMonthClients) / lastMonthClients) * 100);
+            const monthlyGrowthElem = document.getElementById('kpi-monthly-growth');
+            monthlyGrowthElem.innerText = `${monthlyGrowth >= 0 ? '▲ +' : '▼ '}${monthlyGrowth}% vs last month`;
+            monthlyGrowthElem.className = `stat-trend ${monthlyGrowth >= 0 ? 'trend-up' : 'trend-down'}`;
+
+            // 2. تحليل الحجوزات والدفع من الورقة الثانية
+            let totalBookingsCount = 0;
+            let fullyPaidCount = 0;
+            let totalPaidRevenue = 0;
+            const activityCounts = { Diving: 0, Snorkeling: 0, Speedboat: 0 };
+            let totalPaidSum = 0;
+            let totalPendingSum = 0;
+
+            if (rawBookingsData && rawBookingsData.length > 1) {
+                const bookings = rawBookingsData.slice(1);
+                totalBookingsCount = bookings.length;
+
+                bookings.forEach(b => {
+                    const activity = b[4] || 'Other';
+                    if (activityCounts[activity] !== undefined) activityCounts[activity]++;
+                    else activityCounts[activity] = 1;
+
+                    const total = parseFloat(b[11]) || 0;
+                    const paid = parseFloat(b[12]) || 0;
+
+                    totalPaidSum += paid;
+                    if (total > paid) totalPendingSum += (total - paid);
+
+                    if (paid >= total && total > 0) fullyPaidCount++;
+
+                    // حساب الأرباح للشهر الحالي بناء على تاريخ الحجز Date (العمود I)
+                    const bDate = new Date(b[8]);
+                    if (!isNaN(bDate.getTime()) && bDate >= startOfThisMonth) {
+                        totalPaidRevenue += paid;
+                    }
+                });
+            }
+
+            const paidRate = totalBookingsCount === 0 ? 0 : Math.round((fullyPaidCount / totalBookingsCount) * 100);
+            document.getElementById('kpi-paid-rate').innerText = `${paidRate}%`;
+            document.getElementById('kpi-monthly-revenue').innerText = `$${totalPaidRevenue.toLocaleString()}`;
+
+            // 3. رسم المخططات البيانية (Chart.js)
+            
+            // Chart 1: الأنشطة
+            const ctxActivity = document.getElementById('activitiesChart').getContext('2d');
+            if (activityChartInstance) activityChartInstance.destroy();
+            activityChartInstance = new Chart(ctxActivity, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(activityCounts),
+                    datasets: [{
+                        data: Object.values(activityCounts),
+                        backgroundColor: ['#0284c7', '#38bdf8', '#22c55e', '#eab308']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Chart 2: حالات الدفع
+            const ctxPayment = document.getElementById('paymentChart').getContext('2d');
+            if (paymentChartInstance) paymentChartInstance.destroy();
+            paymentChartInstance = new Chart(ctxPayment, {
+                type: 'bar',
+                data: {
+                    labels: ['Collected Paid Amount', 'Pending Remaining Amount'],
+                    datasets: [{
+                        label: 'USD ($)',
+                        data: [totalPaidSum, totalPendingSum],
+                        backgroundColor: ['#22c55e', '#ef4444']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Chart 3: انضمام العملاء الأسبوعي
+            const ctxWeekly = document.getElementById('weeklyClientsChart').getContext('2d');
+            if (weeklyChartInstance) weeklyChartInstance.destroy();
+            weeklyChartInstance = new Chart(ctxWeekly, {
+                type: 'line',
+                data: {
+                    labels: ['Last Week', 'This Week'],
+                    datasets: [{
+                        label: 'New Registered Clients',
+                        data: [lastWeekClients, thisWeekClients],
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
 
