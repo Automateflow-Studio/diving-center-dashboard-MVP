@@ -372,7 +372,6 @@
     </div>
 
     <script>
-        // الرابط الجديد الذي أرسلته
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwBa1h3q9oyPOjq2XY1w5Yqh3heC6XmNO-50oJMSQqmePN8RNnH4aA1v2IJyMk3_CmTw/exec";
         const N8N_WEBHOOK_URL = "https://Automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
         
@@ -526,8 +525,9 @@
             document.getElementById('connection-status').innerText = 'Loading...';
             const timestamp = new Date().getTime();
 
+            // تم تعديل اسم الشريحة هنا ليطابق "الورقة1"
             const script1 = document.createElement('script');
-            script1.src = `${SCRIPT_URL}?sheet=Sheet1&callback=callbackSheet1&_t=${timestamp}`;
+            script1.src = `${SCRIPT_URL}?sheet=الورقة1&callback=callbackSheet1&_t=${timestamp}`;
             document.body.appendChild(script1);
 
             const script2 = document.createElement('script');
