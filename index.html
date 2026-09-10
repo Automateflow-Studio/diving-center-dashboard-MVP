@@ -232,7 +232,7 @@
     <div id="appContainer" class="app-container">
         <div class="tab-navigation">
             <button class="tab-btn active" onclick="switchTab(event, 'daily-operations')">Daily Operations</button>
-            <button class="tab-btn" onclick="switchTab(event, 'id-licenses')">ID & Licenses</button>
+            <button class="tab-btn" id="idLicensesTabBtn" onclick="switchTab(event, 'id-licenses')">ID & Licenses</button>
             <button class="tab-btn" id="analyticsTabBtn" style="display:none;" onclick="switchTab(event, 'analytics')">📊 Analytics & Reports</button>
             <div style="margin-left: auto;" class="user-info">
                 <span id="currentUserDisplay"></span>
@@ -334,7 +334,7 @@
             </div>
         </div>
 
-        <!-- TAB 2: ID & Licenses -->
+        <!-- TAB 2: ID & Licenses (Sales Only) -->
         <div id="id-licenses" class="tab-content">
             <div class="header">
                 <div class="title-group"><h1>🪪 ID & License Management Dashboard</h1></div>
@@ -487,7 +487,14 @@
             if (isManager) {
                 const newBookingCard = document.getElementById('newBookingCard');
                 if (newBookingCard) newBookingCard.style.display = 'none';
+                
+                // إخفاء تبويب الهويات والتراخيص للمدير وإظهار التحليلات
+                document.getElementById('idLicensesTabBtn').style.display = 'none';
                 document.getElementById('analyticsTabBtn').style.display = 'inline-block';
+            } else {
+                // للمستخدمين من نوع Sales
+                document.getElementById('idLicensesTabBtn').style.display = 'inline-block';
+                document.getElementById('analyticsTabBtn').style.display = 'none';
             }
 
             document.getElementById('bookingDate').valueAsDate = new Date();
@@ -692,254 +699,9 @@
                         html += `<td class="actions-cell">-</td>`;
                     }
                 }
-
                 tr.innerHTML = html;
                 tbody.appendChild(tr);
             });
-        }
-
-        async function updateBookingStatus(voucherNo, newStatus) {
-            const rowElem = document.querySelector(`tr[data-voucher="${voucherNo}"]`);
-            if (rowElem) {
-                const statusCell = rowElem.querySelector('.status-cell');
-                const actionsCell = rowElem.querySelector('.actions-cell');
-                if (statusCell) statusCell.innerHTML = `<span class="badge-status status-${newStatus}">${newStatus}</span>`;
-                if (actionsCell) actionsCell.innerHTML = `-`;
-            }
-
-            for (let i = 1; i < rawBookingsData.length; i++) {
-                if (String(rawBookingsData[i][0]) === String(voucherNo)) {
-                    rawBookingsData[i][14] = newStatus;
-                    break;
-                }
-            }
-
-            try {
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: "updateStatus", voucherNo: voucherNo, status: newStatus })
-                });
-            } catch (err) {
-                console.error("Failed to sync status update with server.");
-            }
-        }
-
-        function filterBookings() {
-            const query = document.getElementById('search-booking').value.toLowerCase().trim();
-            if (!query) {
-                renderBookingsTable(rawBookingsData.slice(1));
-                return;
-            }
-            const filtered = rawBookingsData.slice(1).filter(row => {
-                const clientID = String(row[1] || '').toLowerCase();
-                const clientInfo = clientMap[clientID] || { name: '', nationality: '' };
-                return row.some(cell => String(cell).toLowerCase().includes(query)) ||
-                       clientInfo.name.toLowerCase().includes(query);
-            });
-            renderBookingsTable(filtered);
-        }
-
-        function renderTable(data) {
-            const headerRow = document.getElementById('table-header');
-            const tableBody = document.getElementById('table-body');
-            if (data.length === 0) return;
-
-            const headers = data[0];
-            headerRow.innerHTML = '<th>#</th>';
-            headers.forEach(h => headerRow.innerHTML += `<th>${h}</th>`);
-
-            const rows = data.slice(1);
-            document.getElementById('total-records').innerText = rows.length;
-            tableBody.innerHTML = '';
-            rows.forEach((row, index) => {
-                let tr = `<tr><td>${index + 1}</td>`;
-                row.forEach(cell => tr += `<td>${cell || ''}</td>`);
-                tr += '</tr>';
-                tableBody.innerHTML += tr;
-            });
-        }
-
-        /* -------------------------------------------------------------
-           دالة تحليل البيانات والرسم البياني (Analytics Core Engine)
-        ------------------------------------------------------------- */
-        function renderAnalytics() {
-            if (!rawData || rawData.length <= 1) return;
-
-            const now = new Date();
-            const startOfThisWeek = new Date(now);
-            startOfThisWeek.setDate(now.getDate() - now.getDay());
-            startOfThisWeek.setHours(0,0,0,0);
-
-            const startOfLastWeek = new Date(startOfThisWeek);
-            startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
-
-            const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-
-            // 1. تحليل العملاء بناءً على created_at من الورقة الأولى
-            let thisWeekClients = 0;
-            let lastWeekClients = 0;
-            let thisMonthClients = 0;
-            let lastMonthClients = 0;
-
-            const headers1 = rawData[0].map(h => String(h).trim().toLowerCase());
-            const createdAtIndex = headers1.indexOf('created_at');
-
-            rawData.slice(1).forEach(row => {
-                const dateStr = createdAtIndex !== -1 ? row[createdAtIndex] : row[0];
-                if (!dateStr) return;
-                const d = new Date(dateStr);
-                if (isNaN(d.getTime())) return;
-
-                if (d >= startOfThisWeek) thisWeekClients++;
-                else if (d >= startOfLastWeek && d < startOfThisWeek) lastWeekClients++;
-
-                if (d >= startOfThisMonth) thisMonthClients++;
-                else if (d >= startOfLastMonth && d <= endOfLastMonth) lastMonthClients++;
-            });
-
-            document.getElementById('kpi-weekly-clients').innerText = thisWeekClients;
-            document.getElementById('kpi-monthly-clients').innerText = thisMonthClients;
-
-            // حساب نسبة التغير للأسبوع
-            const weeklyGrowth = lastWeekClients === 0 ? (thisWeekClients > 0 ? 100 : 0) : Math.round(((thisWeekClients - lastWeekClients) / lastWeekClients) * 100);
-            const weeklyGrowthElem = document.getElementById('kpi-weekly-growth');
-            weeklyGrowthElem.innerText = `${weeklyGrowth >= 0 ? '▲ +' : '▼ '}${weeklyGrowth}% vs last week`;
-            weeklyGrowthElem.className = `stat-trend ${weeklyGrowth >= 0 ? 'trend-up' : 'trend-down'}`;
-
-            // حساب نسبة التغير للشهر
-            const monthlyGrowth = lastMonthClients === 0 ? (thisMonthClients > 0 ? 100 : 0) : Math.round(((thisMonthClients - lastMonthClients) / lastMonthClients) * 100);
-            const monthlyGrowthElem = document.getElementById('kpi-monthly-growth');
-            monthlyGrowthElem.innerText = `${monthlyGrowth >= 0 ? '▲ +' : '▼ '}${monthlyGrowth}% vs last month`;
-            monthlyGrowthElem.className = `stat-trend ${monthlyGrowth >= 0 ? 'trend-up' : 'trend-down'}`;
-
-            // 2. تحليل الحجوزات والدفع من الورقة الثانية
-            let totalBookingsCount = 0;
-            let fullyPaidCount = 0;
-            let totalPaidRevenue = 0;
-            const activityCounts = { Diving: 0, Snorkeling: 0, Speedboat: 0 };
-            let totalPaidSum = 0;
-            let totalPendingSum = 0;
-
-            if (rawBookingsData && rawBookingsData.length > 1) {
-                const bookings = rawBookingsData.slice(1);
-                totalBookingsCount = bookings.length;
-
-                bookings.forEach(b => {
-                    const activity = b[4] || 'Other';
-                    if (activityCounts[activity] !== undefined) activityCounts[activity]++;
-                    else activityCounts[activity] = 1;
-
-                    const total = parseFloat(b[11]) || 0;
-                    const paid = parseFloat(b[12]) || 0;
-
-                    totalPaidSum += paid;
-                    if (total > paid) totalPendingSum += (total - paid);
-
-                    if (paid >= total && total > 0) fullyPaidCount++;
-
-                    // حساب الأرباح للشهر الحالي بناء على تاريخ الحجز Date (العمود I)
-                    const bDate = new Date(b[8]);
-                    if (!isNaN(bDate.getTime()) && bDate >= startOfThisMonth) {
-                        totalPaidRevenue += paid;
-                    }
-                });
-            }
-
-            const paidRate = totalBookingsCount === 0 ? 0 : Math.round((fullyPaidCount / totalBookingsCount) * 100);
-            document.getElementById('kpi-paid-rate').innerText = `${paidRate}%`;
-            document.getElementById('kpi-monthly-revenue').innerText = `$${totalPaidRevenue.toLocaleString()}`;
-
-            // 3. رسم المخططات البيانية (Chart.js)
-            
-            // Chart 1: الأنشطة
-            const ctxActivity = document.getElementById('activitiesChart').getContext('2d');
-            if (activityChartInstance) activityChartInstance.destroy();
-            activityChartInstance = new Chart(ctxActivity, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(activityCounts),
-                    datasets: [{
-                        data: Object.values(activityCounts),
-                        backgroundColor: ['#0284c7', '#38bdf8', '#22c55e', '#eab308']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // Chart 2: حالات الدفع
-            const ctxPayment = document.getElementById('paymentChart').getContext('2d');
-            if (paymentChartInstance) paymentChartInstance.destroy();
-            paymentChartInstance = new Chart(ctxPayment, {
-                type: 'bar',
-                data: {
-                    labels: ['Collected Paid Amount', 'Pending Remaining Amount'],
-                    datasets: [{
-                        label: 'USD ($)',
-                        data: [totalPaidSum, totalPendingSum],
-                        backgroundColor: ['#22c55e', '#ef4444']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // Chart 3: انضمام العملاء الأسبوعي
-            const ctxWeekly = document.getElementById('weeklyClientsChart').getContext('2d');
-            if (weeklyChartInstance) weeklyChartInstance.destroy();
-            weeklyChartInstance = new Chart(ctxWeekly, {
-                type: 'line',
-                data: {
-                    labels: ['Last Week', 'This Week'],
-                    datasets: [{
-                        label: 'New Registered Clients',
-                        data: [lastWeekClients, thisWeekClients],
-                        borderColor: '#38bdf8',
-                        backgroundColor: 'rgba(56, 189, 248, 0.2)',
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        function exportToExcel(tableId) {
-            const table = document.getElementById(tableId);
-            const workbook = XLSX.utils.table_to_book(table);
-            XLSX.writeFile(workbook, `Export_${tableId}.xlsx`);
-        }
-
-        async function uploadDocument(event) {
-            event.preventDefault();
-            const fileInput = document.getElementById('fileInput');
-            const statusText = document.getElementById('uploadStatus');
-            const uploadBtn = document.getElementById('uploadBtn');
-            if (!fileInput.files[0]) return;
-
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-
-            uploadBtn.disabled = true;
-            statusText.style.color = "#38bdf8";
-            statusText.innerText = "⏳ Processing...";
-
-            try {
-                const response = await fetch(N8N_WEBHOOK_URL, { method: "POST", body: formData });
-                if (response.ok) {
-                    statusText.style.color = "#4ade80";
-                    statusText.innerText = "✅ Successfully Processed!";
-                    fileInput.value = "";
-                    setTimeout(loadData, 2000);
-                }
-            } catch (err) {
-                statusText.style.color = "#f87171";
-                statusText.innerText = "❌ Error uploading.";
-            } finally {
-                uploadBtn.disabled = false;
-            }
         }
     </script>
 </body>
