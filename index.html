@@ -446,7 +446,6 @@
             errElem.innerText = "⏳ Checking credentials...";
 
             try {
-                // تعديل اسم الورقة ليطابق "Users" تماماً
                 const res = await fetch(`${SCRIPT_URL}?sheet=Users`);
                 const usersData = await res.json();
 
@@ -537,7 +536,7 @@
             if (statusElem) statusElem.innerText = 'Loading...';
             const timestamp = new Date().getTime();
 
-            // جلب ورقة عمده اليوزر شيت
+            // جلب ورقة الورقة1
             await new Promise((resolve) => {
                 window.callbackSheet1 = function(data) {
                     if (data && data.length > 0) {
@@ -578,7 +577,7 @@
                 };
 
                 const script1 = document.createElement('script');
-                script1.src = `${SCRIPT_URL}?sheet=Users&callback=callbackSheet1&_t=${timestamp}`;
+                script1.src = `${SCRIPT_URL}?sheet=الورقة1&callback=callbackSheet1&_t=${timestamp}`;
                 document.body.appendChild(script1);
             });
 
@@ -706,7 +705,6 @@
 
         async function updateBookingStatus(voucher, newStatus) {
             alert(`Booking ${voucher} status changed to ${newStatus}`);
-            // يمكن إضافة الكود الفعلي لتحديث السيرفر هنا إذا رغبت
         }
 
         async function submitBooking(e) {
@@ -737,85 +735,19 @@
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                statusSpan.innerText = "✅ Saved successfully!";
+                statusSpan.style.color = "#4ade80";
+                statusSpan.innerText = "✅ Booking saved successfully!";
                 document.getElementById('bookingForm').reset();
                 document.getElementById('bookingDate').valueAsDate = new Date();
-                setTimeout(() => { statusSpan.innerText = ""; loadData(); }, 2000);
+                loadData();
             } catch (err) {
-                statusSpan.innerText = "❌ Error saving booking.";
+                statusSpan.style.color = "#f87171";
+                statusSpan.innerText = "❌ Failed to save booking.";
             } finally {
                 btn.disabled = false;
             }
-        }
-
-        async function uploadDocument(e) {
-            e.preventDefault();
-            const fileInput = document.getElementById('fileInput');
-            const uploadBtn = document.getElementById('uploadBtn');
-            const statusSpan = document.getElementById('uploadStatus');
-
-            if (fileInput.files.length === 0) return;
-            const file = fileInput.files[0];
-
-            uploadBtn.disabled = true;
-            statusSpan.innerText = "⏳ Uploading & Processing...";
-
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async function() {
-                const base64Data = reader.result.split(',')[1];
-                const payload = {
-                    fileName: file.name,
-                    mimeType: file.type,
-                    fileData: base64Data
-                };
-
-                try {
-                    await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    statusSpan.innerText = "✅ Processed & Saved!";
-                    fileInput.value = "";
-                    setTimeout(() => { statusSpan.innerText = ""; loadData(); }, 2500);
-                } catch (err) {
-                    statusSpan.innerText = "❌ Upload failed.";
-                } finally {
-                    uploadBtn.disabled = false;
-                }
-            };
-        }
-
-        function exportToExcel(tableId) {
-            const table = document.getElementById(tableId);
-            const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
-            XLSX.writeFile(wb, `${tableId}_export.xlsx`);
-        }
-
-        function updateAnalyticsDashboard() {
-            if (!rawBookingsData || rawBookingsData.length <= 1) return;
-            const rows = rawBookingsData.slice(1);
-            
-            let totalRevenue = 0;
-            let fullyPaidCount = 0;
-            
-            rows.forEach(r => {
-                const total = parseFloat(r[11]) || 0;
-                const paid = parseFloat(r[12]) || 0;
-                totalRevenue += paid;
-                if (paid >= total && total > 0) fullyPaidCount++;
-            });
-
-            document.getElementById('kpi-monthly-revenue').innerText = `$${totalRevenue.toLocaleString()}`;
-            const paidRate = rows.length > 0 ? Math.round((fullyPaidCount / rows.length) * 100) : 0;
-            document.getElementById('kpi-paid-rate').innerText = `${paidRate}%`;
-            document.getElementById('kpi-weekly-clients').innerText = rows.length;
-            document.getElementById('kpi-monthly-clients').innerText = rows.length;
         }
     </script>
 </body>
