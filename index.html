@@ -430,7 +430,6 @@
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxLF_CLlOfBwqSJFCNflZIERMRhEzs_1v0GoejXo43nFXxF6Vmvc3jkgCoSf8lA1UBvQ/exec";
         
-        // رابط الـ Production Webhook الصحيح الخاص بـ n8n
         const n8nWebhookUrl = "https://automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
         
         let rawData = [];
@@ -546,7 +545,6 @@
             if (statusElem) statusElem.innerText = 'Loading...';
             const timestamp = new Date().getTime();
 
-            // جلب ورقة الورقة1
             await new Promise((resolve) => {
                 window.callbackSheet1 = function(data) {
                     if (data && data.length > 0) {
@@ -590,7 +588,6 @@
                 document.body.appendChild(script1);
             });
 
-            // جلب ورقة الحجوزات (Sheet2)
             const script2 = document.createElement('script');
             script2.src = `${SCRIPT_URL}?sheet=Sheet2&callback=callbackSheet2&_t=${timestamp}`;
             document.body.appendChild(script2);
@@ -729,8 +726,6 @@
             }, 1000);
         }
 
-        // --- دالة رفع ومعالجة المستند المرتبطة بـ n8n Webhook ---
-// --- دالة رفع الباسبور وإرساله للـ Webhook ---
         async function uploadDocument(e) {
             e.preventDefault();
             const fileInput = document.getElementById('fileInput');
@@ -744,7 +739,6 @@
 
             const file = fileInput.files[0];
             const formData = new FormData();
-            // استخدام المفتاح data0 تماماً ليتطابق مع إعدادات n8n Webhook
             formData.append('data0', file);
 
             uploadBtn.disabled = true;
@@ -757,14 +751,12 @@
                 const response = await fetch(n8nWebhookUrl, {
                     method: 'POST',
                     body: formData
-                    // ملاحظة: لا تقم بتحديد Content-Type يدوياً أبداً لكي يقوم المتصفح بضبطه مع الـ Boundary تلقائياً
                 });
 
                 if (response.ok) {
                     uploadStatus.style.color = "#4ade80";
                     uploadStatus.innerText = "✅ Document processed successfully and saved to Google Sheets!";
                     fileInput.value = "";
-                    // إعادة تحميل البيانات بعد ثانيتين لتظهر في الجدول مباشرة
                     setTimeout(() => {
                         loadData();
                     }, 2000);
