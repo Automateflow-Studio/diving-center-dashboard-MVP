@@ -1,393 +1,292 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة الحجوزات والمستندات</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background-color: #f4f6f9;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        .container {
-            max-width: 1250px;
-            margin: 0 auto;
-        }
-        h1, h2 {
-            text-align: center;
-            color: #2c3e50;
-        }
-        .card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 25px;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-        .form-group label {
-            margin-bottom: 5px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            padding: 8px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .btn-submit {
-            grid-column: 1 / -1;
-            background-color: #27ae60;
-            color: white;
-            border: none;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .btn-submit:hover {
-            background-color: #219150;
-        }
-        .table-responsive {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            background: white;
-        }
-        th, td {
-            padding: 10px 12px;
-            border: 1px solid #e0e0e0;
-            text-align: center;
-            font-size: 13px;
-        }
-        th {
-            background-color: #34495e;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 12px;
-        }
-        .status-Accepted {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .status-Cancelled {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .btn-cancel {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: background 0.2s;
-        }
-        .btn-cancel:hover {
-            background-color: #c0392b;
-        }
-        .btn-cancel:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة الحجوزات والشركات</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    
+    /* Navbar Styles */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #ffffff;
+      padding: 15px 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    .navbar-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #1a2530;
+    }
+    .auth-btn {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .login-btn {
+      background-color: #28a745;
+      color: #ffffff;
+    }
+    .login-btn:hover { background-color: #218838; }
+    .logout-btn {
+      background-color: #dc3545;
+      color: #ffffff;
+      display: none;
+    }
+    .logout-btn:hover { background-color: #c82333; }
+
+    .container {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 15px;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+      color: #222;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+      text-align: center;
+    }
+
+    .form-group input, .form-group select {
+      padding: 8px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
+    .notes-group {
+      grid-column: span 5;
+      margin-top: 10px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 4px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    th {
+      background-color: #1f3a52;
+      color: white;
+      padding: 10px 5px;
+      border: 1px solid #2c4d6c;
+    }
+
+    td {
+      padding: 12px 5px;
+      border: 1px solid #dee2e6;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 20px;
+      color: #6c757d;
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>نظام إدارة الحجوزات والشركات</h1>
-
-    <!-- نموذج إضافة حجز جديد -->
-    <div class="card">
-        <h2>إضافة حجز جديد</h2>
-        <form id="bookingForm" onsubmit="submitBooking(event)">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>معرف الشركة (Company ID)</label>
-                    <input type="text" id="companyID" placeholder="مثال: center_1" required>
-                </div>
-                <div class="form-group">
-                    <label>رقم الفووتشر (Voucher No)</label>
-                    <input type="text" id="voucherNo" required>
-                </div>
-                <div class="form-group">
-                    <label>معرف العميل (Client ID)</label>
-                    <input type="text" id="clientID" required>
-                </div>
-                <div class="form-group">
-                    <label>اسم العميل (Customer Name)</label>
-                    <input type="text" id="customerName">
-                </div>
-                <div class="form-group">
-                    <label>الجنسية (Nationality)</label>
-                    <input type="text" id="nationality">
-                </div>
-                <div class="form-group">
-                    <label>النشاط (Activity)</label>
-                    <input type="text" id="activity" required>
-                </div>
-                <div class="form-group">
-                    <label>المزود (Supplier)</label>
-                    <input type="text" id="supplier">
-                </div>
-                <div class="form-group">
-                    <label>المرشد (Guide)</label>
-                    <input type="text" id="guide">
-                </div>
-                <div class="form-group">
-                    <label>عدد الضيوف (Guests)</label>
-                    <input type="number" id="guests" min="1" value="1" required>
-                </div>
-                <div class="form-group">
-                    <label>تاريخ الحجز (Date)</label>
-                    <input type="date" id="bookingDate" required>
-                </div>
-                <div class="form-group">
-                    <label>وقت الاستلام (Pickup Time)</label>
-                    <input type="time" id="pickupTime">
-                </div>
-                <div class="form-group">
-                    <label>مكان الاستلام (Pickup Location)</label>
-                    <input type="text" id="pickupLocation">
-                </div>
-                <div class="form-group">
-                    <label>طريقة الدفع (Payment Method)</label>
-                    <select id="paymentMethod">
-                        <option value="Cash">كاش (Cash)</option>
-                        <option value="Card">بطاقة (Card)</option>
-                        <option value="Transfer">تحويل (Transfer)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>المبلغ الإجمالي (Total)</label>
-                    <input type="number" step="0.01" id="totalAmount" required>
-                </div>
-                <div class="form-group">
-                    <label>المبلغ المدفوع (Paid)</label>
-                    <input type="number" step="0.01" id="paidAmount" value="0">
-                </div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>ملاحظات (Notes)</label>
-                    <textarea id="notes" rows="2"></textarea>
-                </div>
-                <button type="submit" class="btn-submit" id="submitBtn">حفظ الحجز</button>
-            </div>
-        </form>
+  <!-- Navbar Section -->
+  <div class="navbar">
+    <div class="navbar-title">نظام إدارة الحجوزات والشركات</div>
+    <div>
+      <button id="loginBtn" class="auth-btn login-btn">Login</button>
+      <button id="logoutBtn" class="auth-btn logout-btn">Logout</button>
     </div>
+  </div>
 
-    <!-- جدول عرض الحجوزات -->
+  <div class="container">
+    
+    <!-- Booking Form Card -->
     <div class="card">
-        <h2>سجل الحجوزات (Sheet2)</h2>
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Voucher</th>
-                        <th>Client ID</th>
-                        <th>Customer</th>
-                        <th>Nationality</th>
-                        <th>Activity</th>
-                        <th>Supplier</th>
-                        <th>Guide</th>
-                        <th>Guests</th>
-                        <th>Date</th>
-                        <th>Pickup Time</th>
-                        <th>Location</th>
-                        <th>Payment</th>
-                        <th>Total</th>
-                        <th>Paid</th>
-                        <th>Notes</th>
-                        <th>Company ID</th>
-                        <th>Status</th>
-                        <th>الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="bookingsTableBody">
-                    <tr>
-                        <td colspan="18">جاري تحميل البيانات...</td>
-                    </tr>
-                </tbody>
-            </table>
+      <h2 class="section-title">إضافة حجز جديد</h2>
+      <form id="bookingForm">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>(Company ID) معرف الشركة</label>
+            <input type="text" placeholder="مثال: center_1">
+          </div>
+          <div class="form-group">
+            <label>(Voucher No) رقم الفووتشر</label>
+            <input type="text">
+          </div>
+          <div class="form-group">
+            <label>(Client ID) معرف العميل</label>
+            <input type="text">
+          </div>
+          <div class="form-group">
+            <label>(Customer Name) اسم العميل</label>
+            <input type="text">
+          </div>
+          <div class="form-group">
+            <label>(Nationality) الجنسية</label>
+            <input type="text">
+          </div>
+
+          <div class="form-group">
+            <label>(Activity) النشاط</label>
+            <input type="text">
+          </div>
+          <div class="form-group">
+            <label>(Supplier) المورد</label>
+            <input type="text">
+          </div>
+          <div class="form-group">
+            <label>(Guide) المرشد</label>
+            <input type="text">
+          </div>
+          <div class="form-group">
+            <label>(Guests) عدد الضيوف</label>
+            <input type="number" value="1">
+          </div>
+          <div class="form-group">
+            <label>(Date) تاريخ الحجز</label>
+            <input type="date" value="2026-09-13">
+          </div>
+
+          <div class="form-group">
+            <label>(Pickup Time) وقت الاستلام</label>
+            <input type="time" value="12:30">
+          </div>
+          <div class="form-group">
+            <label>(Pickup Location) مكان الاستلام</label>
+            <input type="text">
+          </div>
+          <div class="form-group">
+            <label>(Payment Method) طريقة الدفع</label>
+            <select>
+              <option>كاش (Cash)</option>
+              <option>بطاقة (Card)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>(Total) المبلغ الإجمالي</label>
+            <input type="number" value="0">
+          </div>
+          <div class="form-group">
+            <label>(Paid) المبلغ المدفوع</label>
+            <input type="number" value="0">
+          </div>
+
+          <div class="form-group notes-group">
+            <label>(Notes) ملاحظات</label>
+            <input type="text">
+          </div>
         </div>
+
+        <button type="submit" class="submit-btn">حفظ الحجز</button>
+      </form>
     </div>
-</div>
 
-<script>
-    // رابط الـ Apps Script الجديد والمباشر
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxIymaAx8o-fOpwXNXdpFQqDR4fEAaiC1W2EQ7bHPLnfeQXIJo5_nNAKNeEHaTV1kUy6A/exec';
+    <!-- Booking Records Table Card -->
+    <div class="card">
+      <h2 class="section-title">سجل الحجوزات (Sheet2)</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Voucher</th>
+              <th>Client ID</th>
+              <th>Customer</th>
+              <th>Nationality</th>
+              <th>Activity</th>
+              <th>Supplier</th>
+              <th>Guide</th>
+              <th>Guests</th>
+              <th>Date</th>
+              <th>Pickup Time</th>
+              <th>Location</th>
+              <th>Payment</th>
+              <th>Total</th>
+              <th>Paid</th>
+              <th>Notes</th>
+              <th>Company ID</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="17" class="no-data">لا توجد حجوزات مسجلة.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-    window.onload = function() {
-        loadData();
-    };
+  </div>
 
-    // إرسال حجز جديد
-    async function submitBooking(event) {
-        event.preventDefault();
-        
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'جاري الحفظ...';
+  <script>
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
 
-        const payload = {
-            companyID: document.getElementById('companyID').value,
-            voucherNo: document.getElementById('voucherNo').value,
-            clientID: document.getElementById('clientID').value,
-            customerName: document.getElementById('customerName').value,
-            nationality: document.getElementById('nationality').value,
-            activity: document.getElementById('activity').value,
-            supplier: document.getElementById('supplier').value,
-            guide: document.getElementById('guide').value,
-            guests: document.getElementById('guests').value,
-            bookingDate: document.getElementById('bookingDate').value,
-            pickupTime: document.getElementById('pickupTime').value,
-            pickupLocation: document.getElementById('pickupLocation').value,
-            paymentMethod: document.getElementById('paymentMethod').value,
-            totalAmount: document.getElementById('totalAmount').value,
-            paidAmount: document.getElementById('paidAmount').value,
-            notes: document.getElementById('notes').value
-        };
+    loginBtn.addEventListener('click', () => {
+      loginBtn.style.display = 'none';
+      logoutBtn.style.display = 'inline-block';
+    });
 
-        try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            alert('تم تسجيل الحجز بنجاح (Status: Accepted)');
-            document.getElementById('bookingForm').reset();
-            setTimeout(loadData, 1500);
-        } catch (err) {
-            alert('حدث خطأ أثناء حفظ الحجز: ' + err.toString());
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'حفظ الحجز';
-        }
-    }
-
-    // إلغاء الحجز (تغيير الحالة لـ Cancelled)
-    async function cancelBooking(voucherNo) {
-        if (!confirm(`هل أنت تأكد من إلغاء الحجز رقم: ${voucherNo}؟`)) return;
-
-        try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'updateStatus',
-                    voucherNo: voucherNo,
-                    status: 'Cancelled'
-                })
-            });
-
-            alert('تم إرسال طلب إلغاء الحجز بنجاح!');
-            setTimeout(loadData, 1500);
-        } catch (err) {
-            alert('حدث خطأ أثناء إلغاء الحجز: ' + err.toString());
-        }
-    }
-
-    // جلب القوائم والبيانات
-    async function loadData() {
-        const tbody = document.getElementById('bookingsTableBody');
-        try {
-            const response = await fetch(SCRIPT_URL + '?action=read&sheet=Sheet2');
-            const data = await response.json();
-            
-            if (!data || data.length <= 1) {
-                tbody.innerHTML = '<tr><td colspan="18">لا توجد حجوزات مسجلة.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = '';
-            
-            for (let i = 1; i < data.length; i++) {
-                const row = data[i];
-                const voucher = row[0] || '';
-                const clientID = row[1] || '';
-                const customerName = row[2] || '';
-                const nationality = row[3] || '';
-                const activity = row[4] || '';
-                const supplier = row[5] || '';
-                const guide = row[6] || '';
-                const guests = row[7] || '';
-                const date = row[8] || '';
-                const time = row[9] || '';
-                const location = row[10] || '';
-                const payment = row[11] || '';
-                const total = row[12] || '';
-                const paid = row[13] || '';
-                const notes = row[14] || '';
-                const companyID = row[15] || ''; // العمود P (company_id)
-                const status = row[16] || 'Accepted'; // العمود Q (Status)
-
-                const isCancelled = status === 'Cancelled';
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${voucher}</td>
-                    <td>${clientID}</td>
-                    <td>${customerName}</td>
-                    <td>${nationality}</td>
-                    <td>${activity}</td>
-                    <td>${supplier}</td>
-                    <td>${guide}</td>
-                    <td>${guests}</td>
-                    <td>${date}</td>
-                    <td>${time}</td>
-                    <td>${location}</td>
-                    <td>${payment}</td>
-                    <td>${total}</td>
-                    <td>${paid}</td>
-                    <td>${notes}</td>
-                    <td><strong>${companyID}</strong></td>
-                    <td><span class="status-badge status-${status}">${status}</span></td>
-                    <td>
-                        <button 
-                            class="btn-cancel" 
-                            onclick="cancelBooking('${voucher}')" 
-                            ${isCancelled ? 'disabled' : ''}>
-                            ${isCancelled ? 'ملغى' : '❌ Cancel'}
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            }
-        } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="18">تعذر تحميل البيانات. تأكد من إعدادات المشاركة.</td></tr>';
-        }
-    }
-</script>
-
+    logoutBtn.addEventListener('click', () => {
+      logoutBtn.style.display = 'none';
+      loginBtn.style.display = 'inline-block';
+    });
+  </script>
 </body>
 </html>
