@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة الحجوزات</title>
+    <title>نظام إدارة الحجوزات والمستندات</title>
     <style>
         * {
             box-sizing: border-box;
@@ -16,7 +16,7 @@
             color: #333;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1250px;
             margin: 0 auto;
         }
         h1, h2 {
@@ -123,13 +123,17 @@
 <body>
 
 <div class="container">
-    <h1>نظام إدارة الحجوزات</h1>
+    <h1>نظام إدارة الحجوزات والشركات</h1>
 
     <!-- نموذج إضافة حجز جديد -->
     <div class="card">
         <h2>إضافة حجز جديد</h2>
         <form id="bookingForm" onsubmit="submitBooking(event)">
             <div class="form-grid">
+                <div class="form-group">
+                    <label>معرف الشركة (Company ID)</label>
+                    <input type="text" id="companyID" placeholder="مثال: center_1" required>
+                </div>
                 <div class="form-group">
                     <label>رقم الفووتشر (Voucher No)</label>
                     <input type="text" id="voucherNo" required>
@@ -201,7 +205,7 @@
 
     <!-- جدول عرض الحجوزات -->
     <div class="card">
-        <h2>سجل الحجوزات</h2>
+        <h2>سجل الحجوزات (Sheet2)</h2>
         <div class="table-responsive">
             <table>
                 <thead>
@@ -220,13 +224,15 @@
                         <th>Payment</th>
                         <th>Total</th>
                         <th>Paid</th>
+                        <th>Notes</th>
+                        <th>Company ID</th>
                         <th>Status</th>
                         <th>الإجراءات</th>
                     </tr>
                 </thead>
                 <tbody id="bookingsTableBody">
                     <tr>
-                        <td colspan="16">جاري تحميل البيانات...</td>
+                        <td colspan="18">جاري تحميل البيانات...</td>
                     </tr>
                 </tbody>
             </table>
@@ -235,10 +241,9 @@
 </div>
 
 <script>
-    // رابط الـ Apps Script الجديد المحدث
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycsHJWBDScY4v-ox3J9jsPEzqNZ8WrT6ogfCBqfaNRrLvZS5PWmKAIWi3wsSym2SKq/exec';
+    // رابط الـ Apps Script الجديد والمباشر
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxIymaAx8o-fOpwXNXdpFQqDR4fEAaiC1W2EQ7bHPLnfeQXIJo5_nNAKNeEHaTV1kUy6A/exec';
 
-    // جلب البيانات فور تحميل الصفحة
     window.onload = function() {
         loadData();
     };
@@ -252,6 +257,7 @@
         submitBtn.innerText = 'جاري الحفظ...';
 
         const payload = {
+            companyID: document.getElementById('companyID').value,
             voucherNo: document.getElementById('voucherNo').value,
             clientID: document.getElementById('clientID').value,
             customerName: document.getElementById('customerName').value,
@@ -277,7 +283,7 @@
                 body: JSON.stringify(payload)
             });
 
-            alert('تم تسجيل الحجز بنجاح (مقبول تلقائياً Accepted)');
+            alert('تم تسجيل الحجز بنجاح (Status: Accepted)');
             document.getElementById('bookingForm').reset();
             setTimeout(loadData, 1500);
         } catch (err) {
@@ -288,7 +294,7 @@
         }
     }
 
-    // إلغاء الحجز (تحديث الحالة إلى Cancelled)
+    // إلغاء الحجز (تغيير الحالة لـ Cancelled)
     async function cancelBooking(voucherNo) {
         if (!confirm(`هل أنت تأكد من إلغاء الحجز رقم: ${voucherNo}؟`)) return;
 
@@ -311,21 +317,20 @@
         }
     }
 
-    // جلب بيانات الحجوزات لقراءة الـ 16 عموداً
+    // جلب القوائم والبيانات
     async function loadData() {
         const tbody = document.getElementById('bookingsTableBody');
         try {
-            const response = await fetch(SCRIPT_URL + '?action=read');
+            const response = await fetch(SCRIPT_URL + '?action=read&sheet=Sheet2');
             const data = await response.json();
             
             if (!data || data.length <= 1) {
-                tbody.innerHTML = '<tr><td colspan="16">لا توجد حجوزات مسجلة.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="18">لا توجد حجوزات مسجلة.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = '';
             
-            // قراءة الصفوف وتعيين الفهارس للـ 16 عموداً (من 0 إلى 15)
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
                 const voucher = row[0] || '';
@@ -343,7 +348,8 @@
                 const total = row[12] || '';
                 const paid = row[13] || '';
                 const notes = row[14] || '';
-                const status = row[15] || 'Accepted'; // العمود رقم 16 (Index 15)
+                const companyID = row[15] || ''; // العمود P (company_id)
+                const status = row[16] || 'Accepted'; // العمود Q (Status)
 
                 const isCancelled = status === 'Cancelled';
 
@@ -363,6 +369,8 @@
                     <td>${payment}</td>
                     <td>${total}</td>
                     <td>${paid}</td>
+                    <td>${notes}</td>
+                    <td><strong>${companyID}</strong></td>
                     <td><span class="status-badge status-${status}">${status}</span></td>
                     <td>
                         <button 
@@ -376,7 +384,7 @@
                 tbody.appendChild(tr);
             }
         } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="16">تعذر تحميل البيانات. تأكد من إعدادات الرابط والمشاركة في Google Sheets.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="18">تعذر تحميل البيانات. تأكد من إعدادات المشاركة.</td></tr>';
         }
     }
 </script>
