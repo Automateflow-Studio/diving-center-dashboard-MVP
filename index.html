@@ -3,84 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة الحجوزات والتحليل الشامل</title>
+    <title>نظام إدارة الحجوزات</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        h1, h2 { text-align: center; color: #2c3e50; }
-        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 25px; }
-        #loginCard { max-width: 400px; margin: 80px auto; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { margin-bottom: 5px; font-weight: bold; font-size: 14px; }
-        .form-group input, .form-group select, .form-group textarea { padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        .form-group textarea { resize: vertical; grid-column: span 2; }
-        .btn-submit { grid-column: 1 / -1; background-color: #27ae60; color: white; border: none; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; }
-        .btn-submit:hover { background-color: #219150; }
-        .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
-        th, td { padding: 10px; border: 1px solid #e0e0e0; text-align: center; font-size: 13px; }
-        th { background-color: #34495e; color: white; }
-        .status-badge { padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 12px; }
-        .status-Pending { background-color: #fff3cd; color: #856404; }
-        .status-Accepted { background-color: #d4edda; color: #155724; }
-        .status-Cancelled { background-color: #f8d7da; color: #721c24; }
-        .btn-action { padding: 5px 10px; margin: 2px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; color: white; }
-        .btn-accept { background-color: #2ecc71; }
-        .btn-cancel { background-color: #e74c3c; }
-        .hidden { display: none !important; }
-        .user-header { display: flex; justify-content: space-between; align-items: center; background: #eef2f7; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; }
-        .analytics-box { display: flex; gap: 15px; justify-content: space-around; margin-bottom: 20px; }
-        .stat-card { background: #3498db; color: white; padding: 15px; border-radius: 6px; text-align: center; flex: 1; }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            resize: vertical;
+            grid-column: span 2;
+        }
+        .btn-submit {
+            grid-column: 1 / -1;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-submit:hover {
+            background-color: #219150;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: white;
+        }
+        th, td {
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 13px;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .status-Accepted {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-Cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .btn-cancel {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+        .btn-cancel:hover {
+            background-color: #c0392b;
+        }
+        .btn-cancel:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
 
-<!-- شاشة تسجيل الدخول -->
-<div id="loginCard" class="card">
-    <h2>تسجيل الدخول للنظام</h2>
-    <form onsubmit="handleLogin(event)">
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label>البريد الإلكتروني</label>
-            <input type="email" id="loginEmail" required placeholder="sales@diving.com">
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label>كلمة المرور</label>
-            <input type="password" id="loginPassword" required placeholder="123456">
-        </div>
-        <button type="submit" class="btn-submit">دخول</button>
-    </form>
-</div>
+<div class="container">
+    <h1>نظام إدارة الحجوزات</h1>
 
-<!-- الواجهة الرئيسية -->
-<div id="mainApp" class="container hidden">
-    <div class="user-header">
-        <span id="userInfoDisplay" style="font-weight: bold;"></span>
-        <button onclick="logout()" class="btn-action btn-cancel">تسجيل خروج</button>
-    </div>
-
-    <h1>نظام إدارة الحجوزات والتحليل</h1>
-
-     <!-- قسم تحليل البيانات للمدير / المبيعات -->
-     <div class="analytics-box">
-        <div class="stat-card">
-            <h3>إجمالي الحجوزات</h3>
-            <p id="statTotalBookings" style="font-size: 22px; margin: 0;">0</p>
-        </div>
-        <div class="stat-card" style="background-color: #2ecc71;">
-            <h3>الإيرادات الكلية</h3>
-            <p id="statTotalRevenue" style="font-size: 22px; margin: 0;">0</p>
-        </div>
-        <div class="stat-card" style="background-color: #e67e22;">
-            <h3>الطلبات المعلقة</h3>
-            <p id="statPendingBookings" style="font-size: 22px; margin: 0;">0</p>
-        </div>
-    </div>
-
-    <!-- نموذج إضافة حجز جديد (متاحة لموظف السيلز والمدير) -->
-    <div class="card" id="bookingCardSection">
-        <h2>إضافة حجز جديد وإرفاق الهوية/الرخصة</h2>
+    <!-- نموذج إضافة حجز جديد -->
+    <div class="card">
+        <h2>إضافة حجز جديد</h2>
         <form id="bookingForm" onsubmit="submitBooking(event)">
             <div class="form-grid">
                 <div class="form-group">
@@ -90,22 +141,6 @@
                 <div class="form-group">
                     <label>معرف العميل (Client ID)</label>
                     <input type="text" id="clientID" required>
-                </div>
-                <div class="form-group">
-                    <label>اسم العميل الكامل (Full Name)</label>
-                    <input type="text" id="fullName" required placeholder="مطابق لجواز السفر">
-                </div>
-                <div class="form-group">
-                    <label>رقم الهوية / الباسبورت أو الرخصة (ID / Licence)</label>
-                    <input type="text" id="idNumber" required placeholder="أدخل رقم الـ ID أو الـ Licence">
-                </div>
-                <div class="form-group">
-                    <label>نوع المستند (Document Type)</label>
-                    <select id="documentType">
-                        <option value="Passport">جواز سفر (Passport)</option>
-                        <option value="ID Card">هوية شخصية (ID)</option>
-                        <option value="Licence">رخصة (Licence)</option>
-                    </select>
                 </div>
                 <div class="form-group">
                     <label>النشاط (Activity)</label>
@@ -151,36 +186,36 @@
                     <label>ملاحظات (Notes)</label>
                     <textarea id="notes" rows="2"></textarea>
                 </div>
-                <button type="submit" class="btn-submit" id="submitBtn">حفظ الحجز وإرساله</button>
+                <button type="submit" class="btn-submit" id="submitBtn">حفظ الحجز</button>
             </div>
         </form>
     </div>
 
-    <!-- جدول عرض الحجوزات والتحكم بها -->
+    <!-- جدول عرض الحجوزات -->
     <div class="card">
-        <h2>سجل الحجوزات وإدارتها</h2>
+        <h2>سجل الحجوزات</h2>
         <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
                         <th>Voucher</th>
                         <th>Client ID</th>
-                        <th>Name</th>
-                        <th>ID / Licence</th>
-                        <th>Doc Type</th>
                         <th>Activity</th>
                         <th>Supplier</th>
                         <th>Guide</th>
                         <th>Guests</th>
                         <th>Date</th>
+                        <th>Time</th>
                         <th>Total</th>
                         <th>Paid</th>
                         <th>Status</th>
-                        <th>الإجراءات (مدير / مبيعات)</th>
+                        <th>الإجراءات</th>
                     </tr>
                 </thead>
                 <tbody id="bookingsTableBody">
-                    <tr><td colspan="14">جاري التحميل...</td></tr>
+                    <tr>
+                        <td colspan="12">جاري تحميل البيانات...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -188,72 +223,25 @@
 </div>
 
 <script>
+    // ⚠️ استبدل هذا الرابط برابط الـ Web App الخاص بك بعد إعادة النشر (Deployment)
     const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL';
-    let currentUser = null;
 
+    // عند تحميل الصفحة، نقوم بجلب البيانات
     window.onload = function() {
-        const savedUser = localStorage.getItem('currentUserRole');
-        const savedName = localStorage.getItem('currentUserName');
-        if (savedUser) {
-            currentUser = { role: savedUser, name: savedName };
-            showMainAppLink();
-        }
+        loadData();
     };
 
-    async function handleLogin(event) {
-        event.preventDefault();
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value.trim();
-
-        try {
-            const res = await fetch(SCRIPT_URL + '?sheet=Users');
-            const users = await res.json();
-            
-            let logged = null;
-            for (let i = 1; i < users.length; i++) {
-                if (users[i][0] === email && users[i][1] === password) {
-                    logged = { email: users[i][0], role: users[i][2], name: users[i][3] };
-                    break;
-                }
-            }
-
-            if (logged) {
-                currentUser = logged;
-                localStorage.setItem('currentUserRole', logged.role);
-                localStorage.setItem('currentUserName', logged.name);
-                showMainAppLink();
-            } else {
-                alert('خطأ في البريد الإلكتروني أو كلمة المرور!');
-            }
-        } catch (e) {
-            alert('تعذر الاتصال بقاعدة بيانات المستخدمين.');
-        }
-    }
-
-    function showMainAppLink() {
-        document.getElementById('loginCard').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
-        document.getElementById('userInfoDisplay').innerText = `المستخدم: ${currentUser.name} (${currentUser.role === 'manager' ? 'مدير النظام' : 'موظف مبيعات'})`;
-        loadData();
-    }
-
-    function logout() {
-        localStorage.clear();
-        location.reload();
-    }
-
+    // إرسال حجز جديد
     async function submitBooking(event) {
         event.preventDefault();
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = true;
-        btn.innerText = 'جاري الحفظ...';
+        
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'جاري الحفظ...';
 
         const payload = {
             voucherNo: document.getElementById('voucherNo').value,
             clientID: document.getElementById('clientID').value,
-            fullName: document.getElementById('fullName').value,
-            idNumber: document.getElementById('idNumber').value,
-            documentType: document.getElementById('documentType').value,
             activity: document.getElementById('activity').value,
             supplier: document.getElementById('supplier').value,
             guide: document.getElementById('guide').value,
@@ -273,111 +261,98 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            alert('تم حفظ الحجز بنجاح وإرساله للمراجعة!');
+
+            alert('تم تقديم الحجز بنجاح (مقبول تلقائياً)');
             document.getElementById('bookingForm').reset();
-            setTimeout(loadData, 1500);
+            setTimeout(loadData, 1500); // إعادة تحميل السجل
         } catch (err) {
-            alert('خطأ في إرسال البيانات.');
+            alert('حدث خطأ أثناء حفظ الحجز: ' + err.toString());
         } finally {
-            btn.disabled = false;
-            btn.innerText = 'حفظ الحجز وإرساله';
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'حفظ الحجز';
         }
     }
 
-    async function updateBookingStatus(voucherNo, status) {
-        if (!confirm(`هل أنت متأكد من تغيير حالة الحجز ${voucherNo} إلى (${status})؟`)) return;
+    // إلغاء الحجز
+    async function cancelBooking(voucherNo) {
+        if (!confirm(`هل أنت تأكد من إلغاء الحجز رقم: ${voucherNo}؟`)) return;
 
         try {
             await fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'updateStatus', voucherNo: voucherNo, status: status })
+                body: JSON.stringify({
+                    action: 'updateStatus',
+                    voucherNo: voucherNo,
+                    status: 'Cancelled'
+                })
             });
-            alert('تم تحديث الحالة بنجاح!');
-            setTimeout(loadData, 1500);
-        } catch (e) {
-            alert('حدث خطأ أثناء تحديث الحالة.');
+
+            alert('تم إرسال طلب إلغاء الحجز بنجاح!');
+            setTimeout(loadData, 1500); // إعادة تحميل البيانات لتحديث الجدول
+        } catch (err) {
+            alert('حدث خطأ أثناء إلغاء الحجز: ' + err.toString());
         }
     }
 
+    // جلب بيانات الحجوزات من Google Sheets
     async function loadData() {
         const tbody = document.getElementById('bookingsTableBody');
         try {
-            const res = await fetch(SCRIPT_URL + '?sheet=Sheet1');
-            const data = await res.json();
-
+            const response = await fetch(SCRIPT_URL + '?action=read');
+            const data = await response.json();
+            
             if (!data || data.length <= 1) {
-                tbody.innerHTML = '<tr><td colspan="14">لا توجد حجوزات مسجلة حالياً.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="12">لا توجد حجوزات مسجلة.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = '';
-            let totalRev = 0;
-            let pendingCount = 0;
-
+            
+            // تجاوز أول صف (العناوين)
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
                 const voucher = row[0] || '';
                 const clientID = row[1] || '';
-                const fullName = row[2] || '';
-                const idNumber = row[3] || '';
-                const docType = row[4] || '';
-                const activity = row[5] || '';
-                const supplier = row[6] || '';
-                const guide = row[7] || '';
-                const guests = row[8] || '';
-                const date = row[9] || '';
-                const total = parseFloat(row[12]) || 0;
-                const paid = row[13] || '';
-                const status = row[15] || 'Pending';
+                const activity = row[4] || '';
+                const supplier = row[5] || '';
+                const guide = row[6] || '';
+                const guests = row[7] || '';
+                const date = row[8] || '';
+                const time = row[9] || '';
+                const total = row[11] || '';
+                const paid = row[12] || '';
+                const status = row[14] || 'Accepted';
 
-                totalRev += total;
-                if (status === 'Pending') pendingCount++;
-
-                let actionButtons = '';
-                if (currentUser.role === 'manager') {
-                    if (status === 'Pending') {
-                        actionButtons = `
-                            <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">قبول</button>
-                            <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">رفض</button>
-                        `;
-                    } else if (status === 'Accepted') {
-                        actionButtons = `<button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">إلغاء</button>`;
-                    } else {
-                        actionButtons = `<button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">إعادة تفعيل</button>`;
-                    }
-                } else {
-                    actionButtons = `<span style="color: gray; font-size: 11px;">صلاحية مبيعات فقط</span>`;
-                }
+                const isCancelled = status === 'Cancelled';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${voucher}</td>
                     <td>${clientID}</td>
-                    <td>${fullName}</td>
-                    <td>${idNumber}</td>
-                    <td>${docType}</td>
                     <td>${activity}</td>
                     <td>${supplier}</td>
                     <td>${guide}</td>
                     <td>${guests}</td>
                     <td>${date}</td>
+                    <td>${time}</td>
                     <td>${total}</td>
                     <td>${paid}</td>
                     <td><span class="status-badge status-${status}">${status}</span></td>
-                    <td>${actionButtons}</td>
+                    <td>
+                        <button 
+                            class="btn-cancel" 
+                            onclick="cancelBooking('${voucher}')" 
+                            ${isCancelled ? 'disabled' : ''}>
+                            ${isCancelled ? 'ملغى' : '❌ Cancel'}
+                        </button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             }
-
-            // تحديث البطاقات التحليلية
-            document.getElementById('statTotalBookings').innerText = data.length - 1;
-            document.getElementById('statTotalRevenue').innerText = totalRev.toFixed(2);
-            document.getElementById('statPendingBookings').innerText = pendingCount;
-
         } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="14">تعذر تحميل البيانات من الشيت.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12">تعذر تحميل البيانات. تأكد من إعدادات Script URL و Google Sheets.</td></tr>';
         }
     }
 </script>
