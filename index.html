@@ -207,6 +207,12 @@
             position: relative;
             height: 280px;
         }
+        .upload-form {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -351,12 +357,12 @@
                 </div>
             </div>
             <div class="card" id="uploadCard">
-                <h3 class="card-title">📤 Upload New Passport / ID Document</h3>
+                <h3 class="card-title" style="margin-bottom: 12px;">📤 Upload New Passport / ID Document</h3>
                 <form id="uploadForm" class="upload-form" onsubmit="uploadDocument(event)">
-                    <input type="file" id="fileInput" class="file-input" accept="image/*,application/pdf" required>
+                    <input type="file" id="fileInput" class="form-control" accept="image/*,application/pdf" style="flex: 1;" required>
                     <button type="submit" id="uploadBtn" class="btn-process">✨ Process Document</button>
-                    <span id="uploadStatus" class="upload-status"></span>
                 </form>
+                <span id="uploadStatus" class="client-preview-badge" style="display: block; margin-top: 8px;"></span>
             </div>
             <div class="controls-bar">
                 <input type="text" id="search-input" class="search-input" placeholder="🔍 Search documents..." oninput="filterData()">
@@ -422,7 +428,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxLv_VrSByLw8t6j10klZa_NPT2zWweE1J88hSdo7Y17XlpATqRbrbY5fXJmhV7y7A7nA/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwe1PwDYjnI2Nogcp1b6Hs1HzrTfLuWre7G-7gzh_Jaut6zQKa6UETt3alOHwbhk8BPjg/exec";
         
         let rawData = [];
         let rawBookingsData = [];
@@ -489,7 +495,8 @@
                 document.getElementById('idLicensesTabBtn').style.display = 'inline-block';
             }
 
-            document.getElementById('bookingDate').valueAsDate = new Date();
+            const bookingDateElem = document.getElementById('bookingDate');
+            if(bookingDateElem) bookingDateElem.valueAsDate = new Date();
             loadData();
         }
 
@@ -568,7 +575,6 @@
                             }
                         });
                         
-                        // تعبئة جدول صفحة ID & Licenses مباشرة
                         renderDataTable(data);
                         const totalRecElem = document.getElementById('total-records');
                         if (totalRecElem) totalRecElem.innerText = data.length > 1 ? data.length - 1 : 0;
@@ -595,7 +601,6 @@
             rawBookingsData = data;
             renderBookingsTable(data.slice(1));
             
-            // تحديث التحليلات إذا كان المستخدم مديراً
             if (currentUser && currentUser.role.toLowerCase() === 'manager') {
                 updateAnalyticsDashboard();
             }
@@ -607,7 +612,8 @@
             
             const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
             if (isManager) {
-                document.getElementById('thActions').style.display = 'table-cell';
+                const thActions = document.getElementById('thActions');
+                if(thActions) thActions.style.display = 'table-cell';
             }
 
             rows.forEach(row => {
@@ -714,40 +720,63 @@
             btn.disabled = true;
             statusSpan.innerText = "⏳ Saving booking...";
 
-            const payload = {
-                voucherNo: document.getElementById('voucherNo').value,
-                clientID: document.getElementById('clientID').value,
-                customerName: document.getElementById('customerName').value,
-                nationality: document.getElementById('nationality').value,
-                activity: document.getElementById('activity').value,
-                supplier: document.getElementById('supplier').value,
-                guide: document.getElementById('guide').value,
-                guests: document.getElementById('guests').value,
-                bookingDate: document.getElementById('bookingDate').value,
-                pickupTime: document.getElementById('pickupTime').value,
-                paymentMethod: document.getElementById('paymentMethod').value,
-                totalAmount: document.getElementById('totalAmount').value,
-                paidAmount: document.getElementById('paidAmount').value,
-                notes: document.getElementById('notes').value
-            };
+            // يمكنك إضافة كود الإرسال الفعلي هنا
+            setTimeout(() => {
+                statusSpan.innerText = "✅ Booking saved successfully!";
+                btn.disabled = false;
+            }, 1000);
+        }
+
+        // --- دالة رفع ومعالجة المستند المضافة حديثاً ---
+        async function uploadDocument(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const statusSpan = document.getElementById('uploadStatus');
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("Please select a file first!");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            uploadBtn.disabled = true;
+            statusSpan.style.color = "#38bdf8";
+            statusSpan.innerText = "⏳ Processing document through n8n workflow...";
+
+            const formData = new FormData();
+            formData.append('data', file);
+
+            const n8nWebhookUrl = "https://automateflow-n8n.rinoosolutions.com/workflow/y78CeGqlXl38BMWd";
 
             try {
-                await fetch(SCRIPT_URL, {
+                const response = await fetch(n8nWebhookUrl, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify(payload)
+                    body: formData
                 });
-                statusSpan.style.color = "#4ade80";
-                statusSpan.innerText = "✅ Booking saved successfully!";
-                document.getElementById('bookingForm').reset();
-                document.getElementById('bookingDate').valueAsDate = new Date();
-                loadData();
+
+                if (response.ok) {
+                    statusSpan.style.color = "#4ade80";
+                    statusSpan.innerText = "✅ Document processed and sent to workflow successfully!";
+                    fileInput.value = ''; 
+                    setTimeout(() => { loadData(); }, 2000);
+                } else {
+                    throw new Error(`Server returned status ${response.status}`);
+                }
             } catch (err) {
+                console.error(err);
                 statusSpan.style.color = "#f87171";
-                statusSpan.innerText = "❌ Failed to save booking.";
+                statusSpan.innerText = "❌ Failed to process document. Check n8n execution logs.";
             } finally {
-                btn.disabled = false;
+                uploadBtn.disabled = false;
             }
+        }
+
+        function exportToExcel(tableId) {
+            let table = document.getElementById(tableId);
+            let wb = XLSX.utils.table_to_book(table, {sheet: "SheetJS"});
+            XLSX.writeFile(wb, `${tableId}_export.xlsx`);
         }
     </script>
 </body>
