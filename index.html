@@ -16,7 +16,7 @@
             color: #333;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         h1, h2 {
@@ -49,10 +49,6 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 14px;
-        }
-        .form-group textarea {
-            resize: vertical;
-            grid-column: span 2;
         }
         .btn-submit {
             grid-column: 1 / -1;
@@ -143,6 +139,14 @@
                     <input type="text" id="clientID" required>
                 </div>
                 <div class="form-group">
+                    <label>اسم العميل (Customer Name)</label>
+                    <input type="text" id="customerName">
+                </div>
+                <div class="form-group">
+                    <label>الجنسية (Nationality)</label>
+                    <input type="text" id="nationality">
+                </div>
+                <div class="form-group">
                     <label>النشاط (Activity)</label>
                     <input type="text" id="activity" required>
                 </div>
@@ -165,6 +169,10 @@
                 <div class="form-group">
                     <label>وقت الاستلام (Pickup Time)</label>
                     <input type="time" id="pickupTime">
+                </div>
+                <div class="form-group">
+                    <label>مكان الاستلام (Pickup Location)</label>
+                    <input type="text" id="pickupLocation">
                 </div>
                 <div class="form-group">
                     <label>طريقة الدفع (Payment Method)</label>
@@ -200,12 +208,16 @@
                     <tr>
                         <th>Voucher</th>
                         <th>Client ID</th>
+                        <th>Customer</th>
+                        <th>Nationality</th>
                         <th>Activity</th>
                         <th>Supplier</th>
                         <th>Guide</th>
                         <th>Guests</th>
                         <th>Date</th>
-                        <th>Time</th>
+                        <th>Pickup Time</th>
+                        <th>Location</th>
+                        <th>Payment</th>
                         <th>Total</th>
                         <th>Paid</th>
                         <th>Status</th>
@@ -214,7 +226,7 @@
                 </thead>
                 <tbody id="bookingsTableBody">
                     <tr>
-                        <td colspan="12">جاري تحميل البيانات...</td>
+                        <td colspan="16">جاري تحميل البيانات...</td>
                     </tr>
                 </tbody>
             </table>
@@ -223,10 +235,10 @@
 </div>
 
 <script>
-    // ⚠️ استبدل هذا الرابط برابط الـ Web App الخاص بك بعد إعادة النشر (Deployment)
-    const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL';
+    // رابط الـ Apps Script الجديد المحدث
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbycsHJWBDScY4v-ox3J9jsPEzqNZ8WrT6ogfCBqfaNRrLvZS5PWmKAIWi3wsSym2SKq/exec';
 
-    // عند تحميل الصفحة، نقوم بجلب البيانات
+    // جلب البيانات فور تحميل الصفحة
     window.onload = function() {
         loadData();
     };
@@ -242,12 +254,15 @@
         const payload = {
             voucherNo: document.getElementById('voucherNo').value,
             clientID: document.getElementById('clientID').value,
+            customerName: document.getElementById('customerName').value,
+            nationality: document.getElementById('nationality').value,
             activity: document.getElementById('activity').value,
             supplier: document.getElementById('supplier').value,
             guide: document.getElementById('guide').value,
             guests: document.getElementById('guests').value,
             bookingDate: document.getElementById('bookingDate').value,
             pickupTime: document.getElementById('pickupTime').value,
+            pickupLocation: document.getElementById('pickupLocation').value,
             paymentMethod: document.getElementById('paymentMethod').value,
             totalAmount: document.getElementById('totalAmount').value,
             paidAmount: document.getElementById('paidAmount').value,
@@ -262,9 +277,9 @@
                 body: JSON.stringify(payload)
             });
 
-            alert('تم تقديم الحجز بنجاح (مقبول تلقائياً)');
+            alert('تم تسجيل الحجز بنجاح (مقبول تلقائياً Accepted)');
             document.getElementById('bookingForm').reset();
-            setTimeout(loadData, 1500); // إعادة تحميل السجل
+            setTimeout(loadData, 1500);
         } catch (err) {
             alert('حدث خطأ أثناء حفظ الحجز: ' + err.toString());
         } finally {
@@ -273,7 +288,7 @@
         }
     }
 
-    // إلغاء الحجز
+    // إلغاء الحجز (تحديث الحالة إلى Cancelled)
     async function cancelBooking(voucherNo) {
         if (!confirm(`هل أنت تأكد من إلغاء الحجز رقم: ${voucherNo}؟`)) return;
 
@@ -290,13 +305,13 @@
             });
 
             alert('تم إرسال طلب إلغاء الحجز بنجاح!');
-            setTimeout(loadData, 1500); // إعادة تحميل البيانات لتحديث الجدول
+            setTimeout(loadData, 1500);
         } catch (err) {
             alert('حدث خطأ أثناء إلغاء الحجز: ' + err.toString());
         }
     }
 
-    // جلب بيانات الحجوزات من Google Sheets
+    // جلب بيانات الحجوزات لقراءة الـ 16 عموداً
     async function loadData() {
         const tbody = document.getElementById('bookingsTableBody');
         try {
@@ -304,26 +319,31 @@
             const data = await response.json();
             
             if (!data || data.length <= 1) {
-                tbody.innerHTML = '<tr><td colspan="12">لا توجد حجوزات مسجلة.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="16">لا توجد حجوزات مسجلة.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = '';
             
-            // تجاوز أول صف (العناوين)
+            // قراءة الصفوف وتعيين الفهارس للـ 16 عموداً (من 0 إلى 15)
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
                 const voucher = row[0] || '';
                 const clientID = row[1] || '';
+                const customerName = row[2] || '';
+                const nationality = row[3] || '';
                 const activity = row[4] || '';
                 const supplier = row[5] || '';
                 const guide = row[6] || '';
                 const guests = row[7] || '';
                 const date = row[8] || '';
                 const time = row[9] || '';
-                const total = row[11] || '';
-                const paid = row[12] || '';
-                const status = row[14] || 'Accepted';
+                const location = row[10] || '';
+                const payment = row[11] || '';
+                const total = row[12] || '';
+                const paid = row[13] || '';
+                const notes = row[14] || '';
+                const status = row[15] || 'Accepted'; // العمود رقم 16 (Index 15)
 
                 const isCancelled = status === 'Cancelled';
 
@@ -331,12 +351,16 @@
                 tr.innerHTML = `
                     <td>${voucher}</td>
                     <td>${clientID}</td>
+                    <td>${customerName}</td>
+                    <td>${nationality}</td>
                     <td>${activity}</td>
                     <td>${supplier}</td>
                     <td>${guide}</td>
                     <td>${guests}</td>
                     <td>${date}</td>
                     <td>${time}</td>
+                    <td>${location}</td>
+                    <td>${payment}</td>
                     <td>${total}</td>
                     <td>${paid}</td>
                     <td><span class="status-badge status-${status}">${status}</span></td>
@@ -352,7 +376,7 @@
                 tbody.appendChild(tr);
             }
         } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="12">تعذر تحميل البيانات. تأكد من إعدادات Script URL و Google Sheets.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="16">تعذر تحميل البيانات. تأكد من إعدادات الرابط والمشاركة في Google Sheets.</td></tr>';
         }
     }
 </script>
