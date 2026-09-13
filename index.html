@@ -430,6 +430,9 @@
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwe1PwDYjnI2Nogcp1b6Hs1HzrTfLuWre7G-7gzh_Jaut6zQKa6UETt3alOHwbhk8BPjg/exec";
         
+        // رابط الـ Production Webhook الصحيح الخاص بـ n8n
+        const n8nWebhookUrl = "https://automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
+        
         let rawData = [];
         let rawBookingsData = [];
         let clientMap = {};
@@ -720,35 +723,33 @@
             btn.disabled = true;
             statusSpan.innerText = "⏳ Saving booking...";
 
-            // يمكنك إضافة كود الإرسال الفعلي هنا
             setTimeout(() => {
                 statusSpan.innerText = "✅ Booking saved successfully!";
                 btn.disabled = false;
             }, 1000);
         }
 
-        // --- دالة رفع ومعالجة المستند المضافة حديثاً ---
+        // --- دالة رفع ومعالجة المستند المرتبطة بـ n8n Webhook ---
         async function uploadDocument(e) {
             e.preventDefault();
-            
             const fileInput = document.getElementById('fileInput');
             const uploadBtn = document.getElementById('uploadBtn');
-            const statusSpan = document.getElementById('uploadStatus');
+            const uploadStatus = document.getElementById('uploadStatus');
 
             if (!fileInput.files || fileInput.files.length === 0) {
-                alert("Please select a file first!");
+                alert('Please select a file first.');
                 return;
             }
 
             const file = fileInput.files[0];
-            uploadBtn.disabled = true;
-            statusSpan.style.color = "#38bdf8";
-            statusSpan.innerText = "⏳ Processing document through n8n workflow...";
-
             const formData = new FormData();
-            formData.append('data', file);
+            
+            // استخدام اسم الحقل 'data0' ليطابق إعدادات عقدة Webhook و Analyze Image في n8n
+            formData.append('data0', file);
 
-            const n8nWebhookUrl = "https://automateflow-n8n.rinoosolutions.com/workflow/y78CeGqlXl38BMWd";
+            uploadBtn.disabled = true;
+            uploadStatus.style.color = "#38bdf8";
+            uploadStatus.innerText = "⏳ Uploading and processing document...";
 
             try {
                 const response = await fetch(n8nWebhookUrl, {
@@ -757,26 +758,22 @@
                 });
 
                 if (response.ok) {
-                    statusSpan.style.color = "#4ade80";
-                    statusSpan.innerText = "✅ Document processed and sent to workflow successfully!";
-                    fileInput.value = ''; 
-                    setTimeout(() => { loadData(); }, 2000);
+                    uploadStatus.style.color = "#4ade80";
+                    uploadStatus.innerText = "✅ Document processed successfully!";
+                    fileInput.value = '';
+                    setTimeout(() => {
+                        loadData(); // إعادة تحميل الجدول لجلب البيانات الجديدة
+                    }, 1500);
                 } else {
-                    throw new Error(`Server returned status ${response.status}`);
+                    throw new Error('Failed to process document');
                 }
             } catch (err) {
                 console.error(err);
-                statusSpan.style.color = "#f87171";
-                statusSpan.innerText = "❌ Failed to process document. Check n8n execution logs.";
+                uploadStatus.style.color = "#f87171";
+                uploadStatus.innerText = "❌ Error processing document. Please try again.";
             } finally {
                 uploadBtn.disabled = false;
             }
-        }
-
-        function exportToExcel(tableId) {
-            let table = document.getElementById(tableId);
-            let wb = XLSX.utils.table_to_book(table, {sheet: "SheetJS"});
-            XLSX.writeFile(wb, `${tableId}_export.xlsx`);
         }
     </script>
 </body>
