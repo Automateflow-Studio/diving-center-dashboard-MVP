@@ -422,7 +422,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4FPiDsp1wQLHQV6Hsbz3k9sLIvkBPDRVNrFcLskxa0sgg8yL_gHOFbiXlVJ1xsrsxOw/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwBa1h3q9oyPOjq2XY1w5Yqh3heC6XmNO-50oJMSQqmePN8RNnH4aA1v2IJyMk3_CmTw/exec";
         
         let rawData = [];
         let rawBookingsData = [];
@@ -446,7 +446,7 @@
             errElem.innerText = "⏳ Checking credentials...";
 
             try {
-                const res = await fetch(`${SCRIPT_URL}?sheet=Users`);
+                const res = await fetch(`${SCRIPT_URL}?sheet=عمده اليوزر شيت`);
                 const usersData = await res.json();
 
                 let foundUser = null;
@@ -480,17 +480,12 @@
 
             const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
             
-            // التحكم برؤية التابات بناء على الصلاحيات
             if (isManager) {
-                // إخفاء تاب ID & Licenses للمدير
                 document.getElementById('idLicensesTabBtn').style.display = 'none';
-                
-                // إخفاء كارد الإضافة الجديدة للمدير وإظهار التحليلات
                 const newBookingCard = document.getElementById('newBookingCard');
                 if (newBookingCard) newBookingCard.style.display = 'none';
                 document.getElementById('analyticsTabBtn').style.display = 'inline-block';
             } else {
-                // إظهار تاب ID & Licenses للموظف/السيلز
                 document.getElementById('idLicensesTabBtn').style.display = 'inline-block';
             }
 
@@ -541,7 +536,7 @@
             if (statusElem) statusElem.innerText = 'Loading...';
             const timestamp = new Date().getTime();
 
-            // جلب ورقة الـ IDs للربط الخلفي بدون اشتراط عرض التاب
+            // جلب ورقة عمده اليوزر شيت
             await new Promise((resolve) => {
                 window.callbackSheet1 = function(data) {
                     if (data && data.length > 0) {
@@ -572,17 +567,21 @@
                                 };
                             }
                         });
+                        
+                        // تعبئة جدول صفحة ID & Licenses مباشرة
+                        renderDataTable(data);
+                        const totalRecElem = document.getElementById('total-records');
+                        if (totalRecElem) totalRecElem.innerText = data.length > 1 ? data.length - 1 : 0;
                     }
                     resolve();
                 };
 
                 const script1 = document.createElement('script');
-                // يرجى التأكد من مطابقة اسم الورقة في Google Sheets
-                script1.src = `${SCRIPT_URL}?sheet=الورقة1&callback=callbackSheet1&_t=${timestamp}`;
+                script1.src = `${SCRIPT_URL}?sheet=عمده اليوزر شيت&callback=callbackSheet1&_t=${timestamp}`;
                 document.body.appendChild(script1);
             });
 
-            // جلب ورقة الحجوزات
+            // جلب ورقة الحجوزات (Sheet2)
             const script2 = document.createElement('script');
             script2.src = `${SCRIPT_URL}?sheet=Sheet2&callback=callbackSheet2&_t=${timestamp}`;
             document.body.appendChild(script2);
@@ -595,6 +594,11 @@
             }
             rawBookingsData = data;
             renderBookingsTable(data.slice(1));
+            
+            // تحديث التحليلات إذا كان المستخدم مديراً
+            if (currentUser && currentUser.role.toLowerCase() === 'manager') {
+                updateAnalyticsDashboard();
+            }
         };
 
         function renderBookingsTable(rows) {
@@ -641,6 +645,176 @@
                 tr.innerHTML = html;
                 tbody.appendChild(tr);
             });
+        }
+
+        function renderDataTable(data) {
+            const headerTr = document.getElementById('table-header');
+            const tbody = document.getElementById('table-body');
+            headerTr.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (!data || data.length === 0) return;
+
+            const headers = data[0];
+            headers.forEach(h => {
+                const th = document.createElement('th');
+                th.innerText = h;
+                headerTr.appendChild(th);
+            });
+
+            const rows = data.slice(1);
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${headers.length}" class="empty-state">No documents found.</td></tr>`;
+                return;
+            }
+
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                headers.forEach((_, idx) => {
+                    const td = document.createElement('td');
+                    let val = row[idx] !== undefined ? String(row[idx]) : '';
+                    if (val.startsWith('http')) {
+                        td.innerHTML = `<a href="${val}" target="_blank" style="color:#38bdf8;">View File</a>`;
+                    } else {
+                        td.innerText = val;
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterBookings() {
+            const query = document.getElementById('search-booking').value.toLowerCase();
+            if (!rawBookingsData || rawBookingsData.length <= 1) return;
+            const rows = rawBookingsData.slice(1).filter(row => {
+                return row.some(cell => String(cell).toLowerCase().includes(query));
+            });
+            renderBookingsTable(rows);
+        }
+
+        function filterData() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            if (!rawData || rawData.length <= 1) return;
+            const headers = rawData[0];
+            const rows = rawData.slice(1).filter(row => {
+                return row.some(cell => String(cell).toLowerCase().includes(query));
+            });
+            renderDataTable([headers, ...rows]);
+        }
+
+        async function updateBookingStatus(voucher, newStatus) {
+            alert(`Booking ${voucher} status changed to ${newStatus}`);
+            // يمكن إضافة الكود الفعلي لتحديث السيرفر هنا إذا رغبت
+        }
+
+        async function submitBooking(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveBookingBtn');
+            const statusSpan = document.getElementById('bookingStatus');
+            btn.disabled = true;
+            statusSpan.innerText = "⏳ Saving booking...";
+
+            const payload = {
+                voucherNo: document.getElementById('voucherNo').value,
+                clientID: document.getElementById('clientID').value,
+                customerName: document.getElementById('customerName').value,
+                nationality: document.getElementById('nationality').value,
+                activity: document.getElementById('activity').value,
+                supplier: document.getElementById('supplier').value,
+                guide: document.getElementById('guide').value,
+                guests: document.getElementById('guests').value,
+                bookingDate: document.getElementById('bookingDate').value,
+                pickupTime: document.getElementById('pickupTime').value,
+                paymentMethod: document.getElementById('paymentMethod').value,
+                totalAmount: document.getElementById('totalAmount').value,
+                paidAmount: document.getElementById('paidAmount').value,
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                statusSpan.innerText = "✅ Saved successfully!";
+                document.getElementById('bookingForm').reset();
+                document.getElementById('bookingDate').valueAsDate = new Date();
+                setTimeout(() => { statusSpan.innerText = ""; loadData(); }, 2000);
+            } catch (err) {
+                statusSpan.innerText = "❌ Error saving booking.";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function uploadDocument(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const statusSpan = document.getElementById('uploadStatus');
+
+            if (fileInput.files.length === 0) return;
+            const file = fileInput.files[0];
+
+            uploadBtn.disabled = true;
+            statusSpan.innerText = "⏳ Uploading & Processing...";
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async function() {
+                const base64Data = reader.result.split(',')[1];
+                const payload = {
+                    fileName: file.name,
+                    mimeType: file.type,
+                    fileData: base64Data
+                };
+
+                try {
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    statusSpan.innerText = "✅ Processed & Saved!";
+                    fileInput.value = "";
+                    setTimeout(() => { statusSpan.innerText = ""; loadData(); }, 2500);
+                } catch (err) {
+                    statusSpan.innerText = "❌ Upload failed.";
+                } finally {
+                    uploadBtn.disabled = false;
+                }
+            };
+        }
+
+        function exportToExcel(tableId) {
+            const table = document.getElementById(tableId);
+            const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+            XLSX.writeFile(wb, `${tableId}_export.xlsx`);
+        }
+
+        function updateAnalyticsDashboard() {
+            if (!rawBookingsData || rawBookingsData.length <= 1) return;
+            const rows = rawBookingsData.slice(1);
+            
+            let totalRevenue = 0;
+            let fullyPaidCount = 0;
+            
+            rows.forEach(r => {
+                const total = parseFloat(r[11]) || 0;
+                const paid = parseFloat(r[12]) || 0;
+                totalRevenue += paid;
+                if (paid >= total && total > 0) fullyPaidCount++;
+            });
+
+            document.getElementById('kpi-monthly-revenue').innerText = `$${totalRevenue.toLocaleString()}`;
+            const paidRate = rows.length > 0 ? Math.round((fullyPaidCount / rows.length) * 100) : 0;
+            document.getElementById('kpi-paid-rate').innerText = `${paidRate}%`;
+            document.getElementById('kpi-weekly-clients').innerText = rows.length;
+            document.getElementById('kpi-monthly-clients').innerText = rows.length;
         }
     </script>
 </body>
