@@ -1,361 +1,647 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة الحجوزات</title>
+    <title>Diving Center Management Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background-color: #f4f6f9;
             margin: 0;
-            padding: 20px;
-            color: #333;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 24px;
+            min-height: 100vh;
         }
-        h1, h2 {
-            text-align: center;
-            color: #2c3e50;
-        }
-        .card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 25px;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
-        }
-        .form-group {
+
+        #login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #0f172a;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
-        .form-group label {
-            margin-bottom: 5px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            padding: 8px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .form-group textarea {
-            resize: vertical;
-            grid-column: span 2;
-        }
-        .btn-submit {
-            grid-column: 1 / -1;
-            background-color: #27ae60;
-            color: white;
-            border: none;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .btn-submit:hover {
-            background-color: #219150;
-        }
-        .table-responsive {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            background: white;
-        }
-        th, td {
-            padding: 10px 12px;
-            border: 1px solid #e0e0e0;
-            text-align: center;
-            font-size: 13px;
-        }
-        th {
-            background-color: #34495e;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .status-badge {
-            padding: 4px 8px;
+
+        .login-card {
+            background-color: #1e293b;
+            padding: 32px;
             border-radius: 12px;
-            font-weight: bold;
-            font-size: 12px;
+            border: 1px solid #334155;
+            width: 100%;
+            max-width: 400px;
         }
-        .status-Accepted {
-            background-color: #d4edda;
-            color: #155724;
+
+        .login-card h2 {
+            color: #38bdf8;
+            margin-bottom: 20px;
+            text-align: center;
         }
-        .status-Cancelled {
-            background-color: #f8d7da;
-            color: #721c24;
+
+        .app-container { display: none; }
+
+        .tab-navigation {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #1e293b;
+            padding-bottom: 8px;
         }
-        .btn-cancel {
-            background-color: #e74c3c;
+
+        .tab-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: #0284c7;
+            color: white;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .title-group h1 { font-size: 1.5rem; color: #38bdf8; }
+
+        .user-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .btn-logout {
+            background-color: #ef4444;
             color: white;
             border: none;
             padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
-            transition: background 0.2s;
         }
-        .btn-cancel:hover {
-            background-color: #c0392b;
+
+        .btn-refresh, .btn-submit, .btn-export, .btn-process {
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
         }
-        .btn-cancel:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
+        .btn-submit { background-color: #0f766e; }
+        .btn-export { background-color: #16a34a; }
+        .btn-process { background-color: #22c55e; }
+
+        .stats-grid, .booking-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card, .card {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-bottom: 24px;
+        }
+
+        .stat-title { font-size: 0.875rem; color: #94a3b8; margin-bottom: 8px; }
+        .stat-value { font-size: 1.875rem; font-weight: bold; }
+        .stat-trend { font-size: 0.8rem; font-weight: 600; margin-top: 6px; }
+        .trend-up { color: #4ade80; }
+        .trend-down { color: #f87171; }
+        .status-connected { color: #4ade80; }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .form-group label { font-size: 0.8rem; color: #94a3b8; font-weight: 500; }
+        .form-control {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .form-control:focus { outline: none; border-color: #38bdf8; }
+        .form-control[readonly] { background-color: #1e293b; color: #38bdf8; font-weight: bold; }
+
+        .client-preview-badge { font-size: 0.85rem; color: #4ade80; margin-top: 4px; display: none; }
+
+        .controls-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .table-container {
+            background-color: #1e293b;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+        th { background-color: #0f172a; color: #38bdf8; padding: 14px 16px; border-bottom: 1px solid #334155; text-transform: uppercase; font-size: 0.75rem; }
+        td { padding: 12px 16px; border-bottom: 1px solid #334155; color: #e2e8f0; white-space: nowrap; }
+        tr:hover td { background-color: #182234; }
+        .empty-state { padding: 40px; text-align: center; color: #94a3b8; }
+
+        .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .status-Pending { background: #eab308; color: #000; }
+        .status-Accepted { background: #22c55e; color: #fff; }
+        .status-Cancelled { background: #ef4444; color: #fff; }
+        
+        .btn-action { padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.75rem; font-weight: bold; margin-right: 4px; }
+        .btn-accept { background: #22c55e; color: white; }
+        .btn-cancel { background: #ef4444; color: white; }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        .chart-box {
+            position: relative;
+            height: 280px;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>نظام إدارة الحجوزات</h1>
-
-    <!-- نموذج إضافة حجز جديد -->
-    <div class="card">
-        <h2>إضافة حجز جديد</h2>
-        <form id="bookingForm" onsubmit="submitBooking(event)">
-            <div class="form-grid">
+    <div id="login-overlay">
+        <div class="login-card">
+            <h2>🔐 Diving Center Login</h2>
+            <form onsubmit="handleLogin(event)">
                 <div class="form-group">
-                    <label>رقم الفووتشر (Voucher No)</label>
-                    <input type="text" id="voucherNo" required>
+                    <label>Email Address</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="manager@diving.com" required>
                 </div>
                 <div class="form-group">
-                    <label>معرف العميل (Client ID)</label>
-                    <input type="text" id="clientID" required>
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="******" required>
                 </div>
-                <div class="form-group">
-                    <label>النشاط (Activity)</label>
-                    <input type="text" id="activity" required>
-                </div>
-                <div class="form-group">
-                    <label>المزود (Supplier)</label>
-                    <input type="text" id="supplier">
-                </div>
-                <div class="form-group">
-                    <label>المرشد (Guide)</label>
-                    <input type="text" id="guide">
-                </div>
-                <div class="form-group">
-                    <label>عدد الضيوف (Guests)</label>
-                    <input type="number" id="guests" min="1" value="1" required>
-                </div>
-                <div class="form-group">
-                    <label>تاريخ الحجز (Date)</label>
-                    <input type="date" id="bookingDate" required>
-                </div>
-                <div class="form-group">
-                    <label>وقت الاستلام (Pickup Time)</label>
-                    <input type="time" id="pickupTime">
-                </div>
-                <div class="form-group">
-                    <label>طريقة الدفع (Payment Method)</label>
-                    <select id="paymentMethod">
-                        <option value="Cash">كاش (Cash)</option>
-                        <option value="Card">بطاقة (Card)</option>
-                        <option value="Transfer">تحويل (Transfer)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>المبلغ الإجمالي (Total)</label>
-                    <input type="number" step="0.01" id="totalAmount" required>
-                </div>
-                <div class="form-group">
-                    <label>المبلغ المدفوع (Paid)</label>
-                    <input type="number" step="0.01" id="paidAmount" value="0">
-                </div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>ملاحظات (Notes)</label>
-                    <textarea id="notes" rows="2"></textarea>
-                </div>
-                <button type="submit" class="btn-submit" id="submitBtn">حفظ الحجز</button>
-            </div>
-        </form>
-    </div>
-
-    <!-- جدول عرض الحجوزات -->
-    <div class="card">
-        <h2>سجل الحجوزات</h2>
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Voucher</th>
-                        <th>Client ID</th>
-                        <th>Activity</th>
-                        <th>Supplier</th>
-                        <th>Guide</th>
-                        <th>Guests</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Total</th>
-                        <th>Paid</th>
-                        <th>Status</th>
-                        <th>الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="bookingsTableBody">
-                    <tr>
-                        <td colspan="12">جاري تحميل البيانات...</td>
-                    </tr>
-                </tbody>
-            </table>
+                <button type="submit" class="btn-submit" style="width: 100%; margin-top: 10px;">Sign In</button>
+                <p id="loginError" style="color: #f87171; text-align: center; margin-top: 10px; font-size: 0.85rem;"></p>
+            </form>
         </div>
     </div>
-</div>
 
-<script>
-    // تم تحديث رابط النشر الخاص بـ Google Apps Script Web App
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjIkli9zr-dfATc9ODgpgUiQfzfFe-KFKJYLfEba2VB0ntsRIhJX_2Pw59tcQoV1V9qg/exec';
+    <div id="appContainer" class="app-container">
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab(event, 'daily-operations')">Daily Operations</button>
+            <button class="tab-btn" id="idLicensesTabBtn" onclick="switchTab(event, 'id-licenses')">ID & Licenses</button>
+            <button class="tab-btn" id="analyticsTabBtn" style="display:none;" onclick="switchTab(event, 'analytics')">📊 Analytics & Reports</button>
+            <div style="margin-left: auto;" class="user-info">
+                <span id="currentUserDisplay"></span>
+                <button class="btn-logout" onclick="logout()">Sign Out</button>
+            </div>
+        </div>
 
-    // عند تحميل الصفحة، نقوم بجلب البيانات
-    window.onload = function() {
-        loadData();
-    };
+        <!-- TAB 1: Daily Operations -->
+        <div id="daily-operations" class="tab-content active">
+            <div class="header">
+                <div class="title-group">
+                    <h1>🗓️ Daily Bookings & Operations</h1>
+                </div>
+                <button class="btn-refresh" onclick="loadData()">🔄 Refresh Bookings</button>
+            </div>
 
-    // إرسال حجز جديد
-    async function submitBooking(event) {
-        event.preventDefault();
+            <div class="card" id="newBookingCard">
+                <h3 class="card-title">📝 New Booking</h3>
+                <form id="bookingForm" onsubmit="submitBooking(event)">
+                    <div class="booking-grid">
+                        <div class="form-group">
+                            <label>Voucher no.</label>
+                            <input type="text" id="voucherNo" class="form-control" placeholder="12234" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Client ID no.</label>
+                            <input type="text" id="clientID" class="form-control" placeholder="Enter Passport / ID" oninput="lookupClientInfo()" required>
+                            <span id="clientPreviewBadge" class="client-preview-badge"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer Name</label>
+                            <input type="text" id="customerName" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Nationality</label>
+                            <input type="text" id="nationality" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Activity</label>
+                            <select id="activity" class="form-control" required>
+                                <option value="">Select activity</option>
+                                <option value="Diving">Diving</option>
+                                <option value="Snorkeling">Snorkeling</option>
+                                <option value="Speedboat">Speedboat</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Supplier</label><input type="text" id="supplier" class="form-control"></div>
+                        <div class="form-group"><label>Guide</label><input type="text" id="guide" class="form-control"></div>
+                        <div class="form-group"><label>Guests</label><input type="number" id="guests" class="form-control" value="1" min="1"></div>
+                        <div class="form-group"><label>Date</label><input type="date" id="bookingDate" class="form-control" required></div>
+                        <div class="form-group"><label>Pick-up time</label><input type="time" id="pickupTime" class="form-control"></div>
+                        <div class="form-group">
+                            <label>Payment method</label>
+                            <select id="paymentMethod" class="form-control">
+                                <option value="USD Cash">USD Cash</option>
+                                <option value="EUR Credit">EUR Credit</option>
+                                <option value="Card">Card</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Total amount</label><input type="number" id="totalAmount" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>Paid amount</label><input type="number" id="paidAmount" class="form-control" step="0.01"></div>
+                        <div class="form-group"><label>Notes</label><input type="text" id="notes" class="form-control"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit" id="saveBookingBtn">Save booking</button>
+                        <span id="bookingStatus" style="align-self: center; font-weight: 500;"></span>
+                    </div>
+                </form>
+            </div>
+
+            <div class="controls-bar">
+                <input type="text" id="search-booking" class="search-input" placeholder="🔍 Search Bookings..." oninput="filterBookings()">
+                <button class="btn-export" onclick="exportToExcel('bookings-table')">📊 Export CSV</button>
+            </div>
+
+            <div class="table-container">
+                <table id="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>Voucher</th>
+                            <th>Client ID</th>
+                            <th>Customer Name</th>
+                            <th>Nationality</th>
+                            <th>Activity</th>
+                            <th>Supplier</th>
+                            <th>Guide</th>
+                            <th>Time</th>
+                            <th>Payment</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Status</th>
+                            <th id="thActions" style="display:none;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookings-table-body">
+                        <tr><td colspan="13" class="empty-state">Loading bookings data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: ID & Licenses -->
+        <div id="id-licenses" class="tab-content">
+            <div class="header">
+                <div class="title-group"><h1>🪪 ID & License Management Dashboard</h1></div>
+                <button class="btn-refresh" onclick="loadData()">🔄 Refresh Data</button>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">Connection Status</div>
+                    <div class="stat-value" id="connection-status">Connecting...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Total Registered Clients</div>
+                    <div class="stat-value" id="total-records">0</div>
+                </div>
+            </div>
+            <div class="card" id="uploadCard">
+                <h3 class="card-title">📤 Upload New Passport / ID Document</h3>
+                <form id="uploadForm" class="upload-form" onsubmit="uploadDocument(event)">
+                    <input type="file" id="fileInput" class="file-input" accept="image/*,application/pdf" required>
+                    <button type="submit" id="uploadBtn" class="btn-process">✨ Process Document</button>
+                    <span id="uploadStatus" class="upload-status"></span>
+                </form>
+            </div>
+            <div class="controls-bar">
+                <input type="text" id="search-input" class="search-input" placeholder="🔍 Search documents..." oninput="filterData()">
+                <button class="btn-export" onclick="exportToExcel('data-table')">📊 Export to Excel</button>
+            </div>
+            <div class="table-container">
+                <table id="data-table">
+                    <thead><tr id="table-header"></tr></thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="100%" class="empty-state">Loading documents data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 3: Analytics (Manager Only) -->
+        <div id="analytics" class="tab-content">
+            <div class="header">
+                <div class="title-group"><h1>📊 Executive Analytics Dashboard</h1></div>
+                <button class="btn-refresh" onclick="loadData()">🔄 Refresh Analytics</button>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">New Clients (This Week)</div>
+                    <div class="stat-value" id="kpi-weekly-clients">0</div>
+                    <div class="stat-trend" id="kpi-weekly-growth">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">New Clients (This Month)</div>
+                    <div class="stat-value" id="kpi-monthly-clients">0</div>
+                    <div class="stat-trend" id="kpi-monthly-growth">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Paid vs Pending Rate</div>
+                    <div class="stat-value" id="kpi-paid-rate">0%</div>
+                    <div class="stat-trend" id="kpi-paid-subtext" style="color:#94a3b8;">Fully Paid Bookings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Monthly Revenue Collected</div>
+                    <div class="stat-value" id="kpi-monthly-revenue" style="color:#4ade80;">$0</div>
+                    <div class="stat-trend" id="kpi-revenue-growth">--</div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <div class="card">
+                    <h3 style="color:#38bdf8; margin-bottom:15px;">📈 Weekly New Clients Acquisition</h3>
+                    <div class="chart-box"><canvas id="weeklyClientsChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h3 style="color:#38bdf8; margin-bottom:15px;">🤿 Popularity by Activity</h3>
+                    <div class="chart-box"><canvas id="activitiesChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <h3 style="color:#38bdf8; margin-bottom:15px;">💵 Payment Collection Status</h3>
+                    <div class="chart-box"><canvas id="paymentChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4FPiDsp1wQLHQV6Hsbz3k9sLIvkBPDRVNrFcLskxa0sgg8yL_gHOFbiXlVJ1xsrsxOw/exec";
         
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'جاري الحفظ...';
+        let rawData = [];
+        let rawBookingsData = [];
+        let clientMap = {};
+        let currentUser = null;
 
-        const payload = {
-            voucherNo: document.getElementById('voucherNo').value,
-            clientID: document.getElementById('clientID').value,
-            activity: document.getElementById('activity').value,
-            supplier: document.getElementById('supplier').value,
-            guide: document.getElementById('guide').value,
-            guests: document.getElementById('guests').value,
-            bookingDate: document.getElementById('bookingDate').value,
-            pickupTime: document.getElementById('pickupTime').value,
-            paymentMethod: document.getElementById('paymentMethod').value,
-            totalAmount: document.getElementById('totalAmount').value,
-            paidAmount: document.getElementById('paidAmount').value,
-            notes: document.getElementById('notes').value
+        window.onload = function() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                initApp();
+            }
         };
 
-        try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errElem = document.getElementById('loginError');
 
-            alert('تم تقديم الحجز بنجاح (مقبول تلقائياً)');
-            document.getElementById('bookingForm').reset();
-            setTimeout(loadData, 1500); // إعادة تحميل السجل
-        } catch (err) {
-            alert('حدث خطأ أثناء حفظ الحجز: ' + err.toString());
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'حفظ الحجز';
+            errElem.innerText = "⏳ Checking credentials...";
+
+            try {
+                const res = await fetch(`${SCRIPT_URL}?sheet=Users`);
+                const usersData = await res.json();
+
+                let foundUser = null;
+                for (let i = 1; i < usersData.length; i++) {
+                    if (usersData[i][0].toLowerCase() === email.toLowerCase() && usersData[i][1] === password) {
+                        foundUser = {
+                            email: usersData[i][0],
+                            role: usersData[i][2],
+                            name: usersData[i][3]
+                        };
+                        break;
+                    }
+                }
+
+                if (foundUser) {
+                    currentUser = foundUser;
+                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    initApp();
+                } else {
+                    errElem.innerText = "❌ Invalid email or password.";
+                }
+            } catch (err) {
+                errElem.innerText = "❌ Connection error during login.";
+            }
         }
-    }
 
-    // إلغاء الحجز
-    async function cancelBooking(voucherNo) {
-        if (!confirm(`هل أنت تأكد من إلغاء الحجز رقم: ${voucherNo}؟`)) return;
+        function initApp() {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('currentUserDisplay').innerText = `👤 ${currentUser.name} (${currentUser.role.toUpperCase()})`;
 
-        try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'updateStatus',
-                    voucherNo: voucherNo,
-                    status: 'Cancelled'
-                })
-            });
-
-            alert('تم إرسال طلب إلغاء الحجز بنجاح!');
-            setTimeout(loadData, 1500); // إعادة تحميل البيانات لتحديث الجدول
-        } catch (err) {
-            alert('حدث خطأ أثناء إلغاء الحجز: ' + err.toString());
-        }
-    }
-
-    // جلب بيانات الحجوزات من Google Sheets
-    async function loadData() {
-        const tbody = document.getElementById('bookingsTableBody');
-        try {
-            const response = await fetch(SCRIPT_URL + '?action=read');
-            const data = await response.json();
+            const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
             
-            if (!data || data.length <= 1) {
-                tbody.innerHTML = '<tr><td colspan="12">لا توجد حجوزات مسجلة.</td></tr>';
+            // التحكم برؤية التابات بناء على الصلاحيات
+            if (isManager) {
+                // إخفاء تاب ID & Licenses للمدير
+                document.getElementById('idLicensesTabBtn').style.display = 'none';
+                
+                // إخفاء كارد الإضافة الجديدة للمدير وإظهار التحليلات
+                const newBookingCard = document.getElementById('newBookingCard');
+                if (newBookingCard) newBookingCard.style.display = 'none';
+                document.getElementById('analyticsTabBtn').style.display = 'inline-block';
+            } else {
+                // إظهار تاب ID & Licenses للموظف/السيلز
+                document.getElementById('idLicensesTabBtn').style.display = 'inline-block';
+            }
+
+            document.getElementById('bookingDate').valueAsDate = new Date();
+            loadData();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            location.reload();
+        }
+
+        function switchTab(e, tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            e.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function lookupClientInfo() {
+            const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
+            const nameInput = document.getElementById('customerName');
+            const natInput = document.getElementById('nationality');
+            const badge = document.getElementById('clientPreviewBadge');
+
+            if (!clientIDInput) {
+                nameInput.value = ''; natInput.value = ''; badge.style.display = 'none';
                 return;
             }
 
+            if (clientMap[clientIDInput]) {
+                const client = clientMap[clientIDInput];
+                nameInput.value = client.name || 'N/A';
+                natInput.value = client.nationality || 'N/A';
+                badge.style.color = "#4ade80";
+                badge.innerText = `✓ Found: ${client.name}`;
+                badge.style.display = 'block';
+            } else {
+                nameInput.value = ''; natInput.value = '';
+                badge.style.color = "#f87171";
+                badge.innerText = "❌ Client ID not registered";
+                badge.style.display = 'block';
+            }
+        }
+
+        async function loadData() {
+            const statusElem = document.getElementById('connection-status');
+            if (statusElem) statusElem.innerText = 'Loading...';
+            const timestamp = new Date().getTime();
+
+            // جلب ورقة الـ IDs للربط الخلفي بدون اشتراط عرض التاب
+            await new Promise((resolve) => {
+                window.callbackSheet1 = function(data) {
+                    if (data && data.length > 0) {
+                        if (statusElem) {
+                            statusElem.innerText = 'Connected 🟢';
+                            statusElem.className = 'stat-value status-connected';
+                        }
+                        rawData = data;
+                        
+                        const headers = data[0].map(h => String(h).trim().toLowerCase());
+                        const idIndex = headers.indexOf('id_number');
+                        const nameIndex = headers.indexOf('full_name');
+                        const authorityIndex = headers.indexOf('issuing_authority');
+                        const createdAtIndex = headers.indexOf('created_at');
+
+                        clientMap = {};
+                        data.slice(1).forEach(row => {
+                            const id = String(idIndex !== -1 ? row[idIndex] : (row[3] || row[0])).trim().toLowerCase();
+                            const name = nameIndex !== -1 ? row[nameIndex] : row[0];
+                            const authority = authorityIndex !== -1 ? row[authorityIndex] : (row[2] || 'N/A');
+                            const createdAt = createdAtIndex !== -1 ? row[createdAtIndex] : null;
+
+                            if (id) {
+                                clientMap[id] = { 
+                                    name: name || 'Unknown', 
+                                    nationality: authority || 'N/A',
+                                    createdAt: createdAt
+                                };
+                            }
+                        });
+                    }
+                    resolve();
+                };
+
+                const script1 = document.createElement('script');
+                // يرجى التأكد من مطابقة اسم الورقة في Google Sheets
+                script1.src = `${SCRIPT_URL}?sheet=الورقة1&callback=callbackSheet1&_t=${timestamp}`;
+                document.body.appendChild(script1);
+            });
+
+            // جلب ورقة الحجوزات
+            const script2 = document.createElement('script');
+            script2.src = `${SCRIPT_URL}?sheet=Sheet2&callback=callbackSheet2&_t=${timestamp}`;
+            document.body.appendChild(script2);
+        }
+
+        window.callbackSheet2 = function(data) {
+            if (!data || data.length <= 1) {
+                document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
+                return;
+            }
+            rawBookingsData = data;
+            renderBookingsTable(data.slice(1));
+        };
+
+        function renderBookingsTable(rows) {
+            const tbody = document.getElementById('bookings-table-body');
             tbody.innerHTML = '';
             
-            // تجاوز أول صف (العناوين)
-            for (let i = 1; i < data.length; i++) {
-                const row = data[i];
-                const voucher = row[0] || '';
-                const clientID = row[1] || '';
-                const activity = row[4] || '';
-                const supplier = row[5] || '';
-                const guide = row[6] || '';
-                const guests = row[7] || '';
-                const date = row[8] || '';
-                const time = row[9] || '';
-                const total = row[11] || '';
-                const paid = row[12] || '';
-                const status = row[14] || 'Accepted';
+            const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
+            if (isManager) {
+                document.getElementById('thActions').style.display = 'table-cell';
+            }
 
-                const isCancelled = status === 'Cancelled';
+            rows.forEach(row => {
+                const voucher = String(row[0] || '');
+                const clientID = String(row[1] || '').trim();
+                const clientInfo = clientMap[clientID.toLowerCase()] || { name: 'N/A', nationality: 'N/A' };
+                let timeVal = (row[9] || '').includes('T') ? row[9].split('T')[1].substring(0, 5) : (row[9] || '');
+                const status = row[14] || 'Pending';
 
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
+                tr.setAttribute('data-voucher', voucher);
+                
+                let html = `
                     <td>${voucher}</td>
-                    <td>${clientID}</td>
-                    <td>${activity}</td>
-                    <td>${supplier}</td>
-                    <td>${guide}</td>
-                    <td>${guests}</td>
-                    <td>${date}</td>
-                    <td>${time}</td>
-                    <td>${total}</td>
-                    <td>${paid}</td>
-                    <td><span class="status-badge status-${status}">${status}</span></td>
-                    <td>
-                        <button 
-                            class="btn-cancel" 
-                            onclick="cancelBooking('${voucher}')" 
-                            ${isCancelled ? 'disabled' : ''}>
-                            ${isCancelled ? 'ملغى' : '❌ Cancel'}
-                        </button>
-                    </td>
+                    <td><strong>${clientID}</strong></td>
+                    <td>${clientInfo.name}</td>
+                    <td>${clientInfo.nationality}</td>
+                    <td>${row[4] || ''}</td>
+                    <td>${row[5] || ''}</td>
+                    <td>${row[6] || ''}</td>
+                    <td>${timeVal}</td>
+                    <td>${row[10] || ''}</td>
+                    <td>$${row[11] || '0'}</td>
+                    <td>$${row[12] || '0'}</td>
+                    <td class="status-cell"><span class="badge-status status-${status}">${status}</span></td>
                 `;
-                tbody.appendChild(tr);
-            }
-        } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="12">تعذر تحميل البيانات. تأكد من إعدادات Script URL و Google Sheets.</td></tr>';
-        }
-    }
-</script>
 
+                if (isManager) {
+                    html += `<td class="actions-cell">
+                                <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">Accept</button>
+                                <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">Cancel</button>
+                             </td>`;
+                }
+
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
 </body>
 </html>
