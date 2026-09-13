@@ -730,6 +730,7 @@
         }
 
         // --- دالة رفع ومعالجة المستند المرتبطة بـ n8n Webhook ---
+// --- دالة رفع الباسبور وإرساله للـ Webhook ---
         async function uploadDocument(e) {
             e.preventDefault();
             const fileInput = document.getElementById('fileInput');
@@ -737,42 +738,45 @@
             const uploadStatus = document.getElementById('uploadStatus');
 
             if (!fileInput.files || fileInput.files.length === 0) {
-                alert('Please select a file first.');
+                alert("Please select a file first.");
                 return;
             }
 
             const file = fileInput.files[0];
             const formData = new FormData();
-            
-            // استخدام اسم الحقل 'data0' ليطابق إعدادات عقدة Webhook و Analyze Image في n8n
+            // استخدام المفتاح data0 تماماً ليتطابق مع إعدادات n8n Webhook
             formData.append('data0', file);
 
             uploadBtn.disabled = true;
+            uploadBtn.innerText = "⏳ Processing Document...";
+            uploadStatus.style.display = "block";
             uploadStatus.style.color = "#38bdf8";
-            uploadStatus.innerText = "⏳ Uploading and processing document...";
+            uploadStatus.innerText = "Uploading and analyzing document with AI...";
 
             try {
                 const response = await fetch(n8nWebhookUrl, {
                     method: 'POST',
                     body: formData
+                    // ملاحظة: لا تقم بتحديد Content-Type يدوياً أبداً لكي يقوم المتصفح بضبطه مع الـ Boundary تلقائياً
                 });
 
                 if (response.ok) {
                     uploadStatus.style.color = "#4ade80";
-                    uploadStatus.innerText = "✅ Document processed successfully!";
-                    fileInput.value = '';
+                    uploadStatus.innerText = "✅ Document processed successfully and saved to Google Sheets!";
+                    fileInput.value = "";
+                    // إعادة تحميل البيانات بعد ثانيتين لتظهر في الجدول مباشرة
                     setTimeout(() => {
-                        loadData(); // إعادة تحميل الجدول لجلب البيانات الجديدة
-                    }, 1500);
+                        loadData();
+                    }, 2000);
                 } else {
-                    throw new Error('Failed to process document');
+                    throw new Error("Server returned status " + response.status);
                 }
             } catch (err) {
-                console.error(err);
                 uploadStatus.style.color = "#f87171";
-                uploadStatus.innerText = "❌ Error processing document. Please try again.";
+                uploadStatus.innerText = "❌ Error processing document: " + err.message;
             } finally {
                 uploadBtn.disabled = false;
+                uploadBtn.innerText = "✨ Process Document";
             }
         }
     </script>
