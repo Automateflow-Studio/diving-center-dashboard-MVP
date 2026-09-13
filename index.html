@@ -446,12 +446,13 @@
             errElem.innerText = "⏳ Checking credentials...";
 
             try {
-                const res = await fetch(`${SCRIPT_URL}?sheet=عمده اليوزر شيت`);
+                // تعديل اسم الورقة ليطابق "Users" تماماً
+                const res = await fetch(`${SCRIPT_URL}?sheet=Users`);
                 const usersData = await res.json();
 
                 let foundUser = null;
                 for (let i = 1; i < usersData.length; i++) {
-                    if (usersData[i][0].toLowerCase() === email.toLowerCase() && usersData[i][1] === password) {
+                    if (usersData[i][0].toLowerCase() === email.toLowerCase() && String(usersData[i][1]) === String(password)) {
                         foundUser = {
                             email: usersData[i][0],
                             role: usersData[i][2],
