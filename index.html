@@ -1,612 +1,128 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة الحجوزات والمستندات</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background-color: #f4f6f9;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        h1, h2 {
-            text-align: center;
-            color: #2c3e50;
-        }
-        .card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 25px;
-        }
-        /* Auth Bar Header */
-        .auth-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #2c3e50;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .auth-bar select {
-            padding: 6px 12px;
-            border-radius: 4px;
-            border: none;
-            font-weight: bold;
-        }
-        /* Navigation Tabs */
-        .nav-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #ccc;
-        }
-        .tab-btn {
-            padding: 10px 20px;
-            background: #e0e0e0;
-            border: none;
-            cursor: pointer;
-            border-radius: 6px 6px 0 0;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-        .tab-btn.active {
-            background: #27ae60;
-            color: white;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
+// ================= ================= =================
+// 1. خريطة معرفات ملفات Google Sheets الخاصة بكل شركة (16 شركة)
+// ================= ================= =================
+var COMPANY_SHEETS = {
+  "company_1": "ID_GOOGLE_SHEET_FOR_COMPANY_1",
+  "company_2": "ID_GOOGLE_SHEET_FOR_COMPANY_2",
+  "company_3": "ID_GOOGLE_SHEET_FOR_COMPANY_3",
+  "company_4": "ID_GOOGLE_SHEET_FOR_COMPANY_4",
+  "company_5": "ID_GOOGLE_SHEET_FOR_COMPANY_5",
+  "company_6": "ID_GOOGLE_SHEET_FOR_COMPANY_6",
+  "company_7": "ID_GOOGLE_SHEET_FOR_COMPANY_7",
+  "company_8": "ID_GOOGLE_SHEET_FOR_COMPANY_8",
+  "company_9": "ID_GOOGLE_SHEET_FOR_COMPANY_9",
+  "company_10": "ID_GOOGLE_SHEET_FOR_COMPANY_10",
+  "company_11": "ID_GOOGLE_SHEET_FOR_COMPANY_11",
+  "company_12": "ID_GOOGLE_SHEET_FOR_COMPANY_12",
+  "company_13": "ID_GOOGLE_SHEET_FOR_COMPANY_13",
+  "company_14": "ID_GOOGLE_SHEET_FOR_COMPANY_14",
+  "company_15": "ID_GOOGLE_SHEET_FOR_COMPANY_15",
+  "company_16": "ID_GOOGLE_SHEET_FOR_COMPANY_16"
+};
 
-        /* Forms Grid */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-        .form-group label {
-            margin-bottom: 5px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            padding: 8px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .btn-submit {
-            grid-column: 1 / -1;
-            background-color: #27ae60;
-            color: white;
-            border: none;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .btn-submit:hover {
-            background-color: #219150;
-        }
+// ================= ================= =================
+// 2. دالة جلب البيانات (doGet)
+// ================= ================= =================
+function doGet(e) {
+  var companyId = e.parameter.companyId || "company_1";
+  var sheetName = e.parameter.sheet || "Sheet2";
+  
+  var ssId = COMPANY_SHEETS[companyId];
+  if (!ssId) {
+    return ContentService.createTextOutput(JSON.stringify({ "error": "Company ID not found" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
-        /* Table Responsive */
-        .table-responsive {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            background: white;
-        }
-        th, td {
-            padding: 10px 12px;
-            border: 1px solid #e0e0e0;
-            text-align: center;
-            font-size: 13px;
-        }
-        th {
-            background-color: #34495e;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 12px;
-        }
-        .status-Accepted { background-color: #d4edda; color: #155724; }
-        .status-Cancelled { background-color: #f8d7da; color: #721c24; }
-        .status-Pending { background-color: #fff3cd; color: #856404; }
+  var ss = SpreadsheetApp.openById(ssId);
+  var sheet = ss.getSheetByName(sheetName);
+  
+  if (!sheet) {
+    return ContentService.createTextOutput(JSON.stringify([]))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  var data = sheet.getDataRange().getDisplayValues();
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
-        .btn-action {
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            color: white;
-            margin: 2px;
-        }
-        .btn-accept { background-color: #27ae60; }
-        .btn-cancel { background-color: #e74c3c; }
-        .btn-action:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+// ================= ================= =================
+// 3. دالة إضافة وتحديث الحجوزات (doPost)
+// ================= ================= =================
+function doPost(e) {
+  try {
+    var contents = JSON.parse(e.postData.contents);
+    var companyId = contents.companyId || "company_1";
+    var ssId = COMPANY_SHEETS[companyId];
 
-        /* Analytics Dashboard */
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        .stat-card {
-            background: #ecf0f1;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .stat-card h3 { margin: 0; font-size: 24px; color: #2c3e50; }
-        .stat-card p { margin: 5px 0 0; color: #7f8c8d; font-size: 14px; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <!-- شريط ترويسة اختيار الدور -->
-    <div class="auth-bar">
-        <div>
-            <span>دور المستخدم الحالي: </span>
-            <select id="userRoleSelect" onchange="switchUserRole()">
-                <option value="sales">مبيعات (Sales)</option>
-                <option value="manager">مدير (Manager)</option>
-            </select>
-        </div>
-        <div>نظام إدارة الشركات الحصري</div>
-    </div>
-
-    <h1>نظام إدارة الحجوزات والمستندات</h1>
-
-    <!-- التبويبات Tabs -->
-    <div class="nav-tabs" id="tabsHeader">
-        <button class="tab-btn active" onclick="showTab('uploadTab')">1. رفع الهوية / الرخصة (ID & License)</button>
-        <button class="tab-btn" id="tabAddBooking" onclick="showTab('addBookingTab')">2. إضافة حجز (Add Booking)</button>
-        <button class="tab-btn" id="tabViewBookings" onclick="showTab('viewBookingsTab')" style="display:none;">2. إدارة الحجوزات (Manage Bookings)</button>
-        <button class="tab-btn" id="tabAnalytics" onclick="showTab('analyticsTab')" style="display:none;">3. تحليل البيانات (Analytics)</button>
-    </div>
-
-    <!-- التبويب الأول: رفع الهوية والرخصة -->
-    <div id="uploadTab" class="tab-content active">
-        <div class="card">
-            <h2>رفع المستندات والوثائق الرسمية (ID & License)</h2>
-            <form id="uploadForm" onsubmit="submitDocs(event)">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>معرف العميل (Client ID)</label>
-                        <input type="text" id="docClientID" required>
-                    </div>
-                    <div class="form-group">
-                        <label>نوع الوثيقة</label>
-                        <select id="docType">
-                            <option value="ID">بطاقة هوية (ID Card)</option>
-                            <option value="License">رخصة قيادة (Driver License)</option>
-                            <option value="Passport">جواز سفر (Passport)</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="grid-column: span 2;">
-                        <label>اختر الملف</label>
-                        <input type="file" id="fileInput" required>
-                    </div>
-                    <button type="submit" class="btn-submit" id="uploadBtn">رفع الملف</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- التبويب الثاني (للـ Sales): إضافة حجز -->
-    <div id="addBookingTab" class="tab-content">
-        <div class="card">
-            <h2>إضافة حجز جديد</h2>
-            <form id="bookingForm" onsubmit="submitBooking(event)">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>رقم الفووتشر (Voucher No)</label>
-                        <input type="text" id="voucherNo" required>
-                    </div>
-                    <div class="form-group">
-                        <label>معرف العميل (Client ID)</label>
-                        <input type="text" id="clientID" required>
-                    </div>
-                    <div class="form-group">
-                        <label>اسم الزبون (Customer Name)</label>
-                        <input type="text" id="customerName">
-                    </div>
-                    <div class="form-group">
-                        <label>الجنسية (Nationality)</label>
-                        <input type="text" id="nationality">
-                    </div>
-                    <div class="form-group">
-                        <label>النشاط (Activity)</label>
-                        <input type="text" id="activity" required>
-                    </div>
-                    <div class="form-group">
-                        <label>المزود (Supplier)</label>
-                        <input type="text" id="supplier">
-                    </div>
-                    <div class="form-group">
-                        <label>المرشد (Guide)</label>
-                        <input type="text" id="guide">
-                    </div>
-                    <div class="form-group">
-                        <label>عدد الضيوف (Guests)</label>
-                        <input type="number" id="guests" min="1" value="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label>تاريخ الحجز (Date)</label>
-                        <input type="date" id="bookingDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label>وقت الاستلام (Pickup Time)</label>
-                        <input type="time" id="pickupTime">
-                    </div>
-                    <div class="form-group">
-                        <label>طريقة الدفع (Payment Method)</label>
-                        <select id="paymentMethod">
-                            <option value="Cash">كاش (Cash)</option>
-                            <option value="Card">بطاقة (Card)</option>
-                            <option value="Transfer">تحويل (Transfer)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>المبلغ الإجمالي (Total)</label>
-                        <input type="number" step="0.01" id="totalAmount" required>
-                    </div>
-                    <div class="form-group">
-                        <label>المبلغ المدفوع (Paid)</label>
-                        <input type="number" step="0.01" id="paidAmount" value="0">
-                    </div>
-                    <div class="form-group" style="grid-column: span 2;">
-                        <label>ملاحظات (Notes)</label>
-                        <textarea id="notes" rows="2"></textarea>
-                    </div>
-                    <button type="submit" class="btn-submit" id="submitBtn">حفظ الحجز</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- التبويب الثالث (للمدير): عرض وتحديث الحجوزات -->
-    <div id="viewBookingsTab" class="tab-content">
-        <div class="card">
-            <h2>سجل وطلبات الحجوزات (قبول / إلغاء)</h2>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Voucher</th>
-                            <th>Client ID</th>
-                            <th>Customer Name</th>
-                            <th>Nationality</th>
-                            <th>Activity</th>
-                            <th>Supplier</th>
-                            <th>Guide</th>
-                            <th>Guests</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Total</th>
-                            <th>Paid</th>
-                            <th>Status</th>
-                            <th>الإجراءات (قبول / إلغاء)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bookingsTableBody">
-                        <tr>
-                            <td colspan="14">جاري تحميل البيانات...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- التبويب الرابع (للمدير): تحليل البيانات -->
-    <div id="analyticsTab" class="tab-content">
-        <div class="card">
-            <h2>تحليل البيانات والإحصائيات المالية</h2>
-            <div class="analytics-grid">
-                <div class="stat-card">
-                    <h3 id="statTotalBookings">0</h3>
-                    <p>إجمالي الحجوزات</p>
-                </div>
-                <div class="stat-card">
-                    <h3 id="statAcceptedBookings">0</h3>
-                    <p>الحجوزات المقبولة</p>
-                </div>
-                <div class="stat-card">
-                    <h3 id="statTotalRevenue">$0.00</h3>
-                    <p>إجمالي الإيرادات (المقبولة)</p>
-                </div>
-                <div class="stat-card">
-                    <h3 id="statTotalPaid">$0.00</h3>
-                    <p>إجمالي المحصل (المقبول)</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<script>
-    // تم استخدام رابط النشر الخاص بك مباشرة
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzTaURSObCvyI0DVyDrTncQMqmGoj0AQ1i3HUePFhIHZ-usAmYxzMteQgrInurJz-uLfg/exec';
-    let globalBookingsData = [];
-
-    window.onload = function() {
-        switchUserRole();
-        loadData();
-    };
-
-    // التحكم بالتبويبات حسب الدور (Sales vs Manager)
-    function switchUserRole() {
-        const role = document.getElementById('userRoleSelect').value;
-        const tabAddBooking = document.getElementById('tabAddBooking');
-        const tabViewBookings = document.getElementById('tabViewBookings');
-        const tabAnalytics = document.getElementById('tabAnalytics');
-
-        if (role === 'sales') {
-            tabAddBooking.style.display = 'inline-block';
-            tabViewBookings.style.display = 'none';
-            tabAnalytics.style.display = 'none';
-            showTab('uploadTab');
-        } else if (role === 'manager') {
-            tabAddBooking.style.display = 'none';
-            tabViewBookings.style.display = 'inline-block';
-            tabAnalytics.style.display = 'inline-block';
-            showTab('uploadTab');
-        }
+    if (!ssId) {
+      return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": "Invalid Company ID" }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
-    function showTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    var ss = SpreadsheetApp.openById(ssId);
 
-        document.getElementById(tabId).classList.add('active');
-        
-        const btnMap = {
-            'uploadTab': 0,
-            'addBookingTab': 1,
-            'viewBookingsTab': 2,
-            'analyticsTab': 3
-        };
-        const buttons = document.querySelectorAll('.tab-btn');
-        if (buttons[btnMap[tabId]]) {
-            buttons[btnMap[tabId]].classList.add('active');
+    // أ. تحديث حالة الحجز (Accepted / Cancelled)
+    if (contents.action === "updateStatus") {
+      var sheet2 = ss.getSheetByName("Sheet2");
+      if (!sheet2) {
+        return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": "Sheet2 not found" }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+
+      var data = sheet2.getDataRange().getDisplayValues();
+      var voucherToFind = String(contents.voucherNo).trim();
+      var updated = false;
+
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() === voucherToFind) {
+          sheet2.getRange(i + 1, 15).setValue(contents.status); // العمود 15 (Status)
+          updated = true;
+          break;
         }
+      }
+
+      if (updated) {
+        return ContentService.createTextOutput(JSON.stringify({ "status": "success", "message": "Status updated successfully" }))
+          .setMimeType(ContentService.MimeType.JSON);
+      } else {
+        return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": "Voucher not found" }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
     }
 
-    // رفع الهوية أو الرخصة
-    async function submitDocs(event) {
-        event.preventDefault();
-        const uploadBtn = document.getElementById('uploadBtn');
-        uploadBtn.disabled = true;
-        uploadBtn.innerText = 'جاري الرفع...';
+    // ب. إضافة حجز جديد
+    if (contents.action === "addBooking" || !contents.action) {
+      var sheet2 = ss.getSheetByName("Sheet2");
+      if (!sheet2) {
+        sheet2 = ss.insertSheet("Sheet2");
+        sheet2.appendRow(["Voucher", "Client ID", "Customer Name", "Nationality", "Activity", "Supplier", "Guide", "Guests", "Date", "Pickup Time", "Payment Method", "Total", "Paid", "Notes", "Status"]);
+      }
 
-        const clientID = document.getElementById('docClientID').value;
-        const docType = document.getElementById('docType').value;
-        const file = document.getElementById('fileInput').files[0];
+      sheet2.appendRow([
+        contents.voucherNo || "",
+        contents.clientID || "",
+        contents.customerName || "",
+        contents.nationality || "",
+        contents.activity || "",
+        contents.supplier || "",
+        contents.guide || "",
+        contents.guests || "",
+        contents.bookingDate || "",
+        "'" + (contents.pickupTime || ""),
+        contents.paymentMethod || "",
+        contents.totalAmount || "",
+        contents.paidAmount || "",
+        contents.notes || "",
+        "Pending"
+      ]);
 
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            const base64 = e.target.result.split(',')[1];
-            const payload = {
-                action: 'uploadDoc',
-                clientID: clientID,
-                docType: docType,
-                fileName: file.name,
-                mimeType: file.type,
-                fileData: base64
-            };
-
-            try {
-                await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                alert('تم رفع المستند بنجاح!');
-                document.getElementById('uploadForm').reset();
-            } catch (err) {
-                alert('حدث خطأ أثناء رفع المستند: ' + err.toString());
-            } finally {
-                uploadBtn.disabled = false;
-                uploadBtn.innerText = 'رفع الملف';
-            }
-        };
-
-        if (file) {
-            reader.readAsDataURL(file);
-        }
+      return ContentService.createTextOutput(JSON.stringify({ "status": "success", "message": "Booking saved" }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // حفظ حجز جديد
-    async function submitBooking(event) {
-        event.preventDefault();
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.disabled = true;
-        submitBtn.innerText = 'جاري الحفظ...';
-
-        const payload = {
-            action: 'addBooking',
-            voucherNo: document.getElementById('voucherNo').value,
-            clientID: document.getElementById('clientID').value,
-            customerName: document.getElementById('customerName').value,
-            nationality: document.getElementById('nationality').value,
-            activity: document.getElementById('activity').value,
-            supplier: document.getElementById('supplier').value,
-            guide: document.getElementById('guide').value,
-            guests: document.getElementById('guests').value,
-            bookingDate: document.getElementById('bookingDate').value,
-            pickupTime: document.getElementById('pickupTime').value,
-            paymentMethod: document.getElementById('paymentMethod').value,
-            totalAmount: document.getElementById('totalAmount').value,
-            paidAmount: document.getElementById('paidAmount').value,
-            notes: document.getElementById('notes').value
-        };
-
-        try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            alert('تم تقديم الحجز بنجاح!');
-            document.getElementById('bookingForm').reset();
-            setTimeout(loadData, 1500);
-        } catch (err) {
-            alert('حدث خطأ أثناء حفظ الحجز: ' + err.toString());
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'حفظ الحجز';
-        }
-    }
-
-    // تغيير حالة الحجز من قبل المدير (قبول / إلغاء)
-    async function updateBookingStatus(voucherNo, newStatus) {
-        if (!confirm(`هل أنت تأكد من تغيير حالة الحجز رقم ${voucherNo} إلى: ${newStatus}؟`)) return;
-
-        try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'updateStatus',
-                    voucherNo: voucherNo,
-                    status: newStatus
-                })
-            });
-
-            alert(`تم تغيير الحالة إلى ${newStatus} بنجاح!`);
-            setTimeout(loadData, 1500);
-        } catch (err) {
-            alert('حدث خطأ أثناء تغيير الحالة: ' + err.toString());
-        }
-    }
-
-    // جلب بيانات الحجوزات
-    async function loadData() {
-        const tbody = document.getElementById('bookingsTableBody');
-        try {
-            const response = await fetch(SCRIPT_URL + '?action=read');
-            const data = await response.json();
-            globalBookingsData = data;
-
-            if (!data || data.length <= 1) {
-                tbody.innerHTML = '<tr><td colspan="14">لا توجد حجوزات مسجلة.</td></tr>';
-                renderAnalytics([]);
-                return;
-            }
-
-            tbody.innerHTML = '';
-            const rowsData = data.slice(1);
-
-            rowsData.forEach(row => {
-                const voucher = row[0] || '';
-                const clientID = row[1] || '';
-                const customerName = row[2] || '';
-                const nationality = row[3] || '';
-                const activity = row[4] || '';
-                const supplier = row[5] || '';
-                const guide = row[6] || '';
-                const guests = row[7] || '';
-                const date = row[8] || '';
-                const time = row[9] || '';
-                const total = row[11] || 0;
-                const paid = row[12] || 0;
-                const status = row[14] || 'Pending';
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${voucher}</td>
-                    <td>${clientID}</td>
-                    <td>${customerName}</td>
-                    <td>${nationality}</td>
-                    <td>${activity}</td>
-                    <td>${supplier}</td>
-                    <td>${guide}</td>
-                    <td>${guests}</td>
-                    <td>${date}</td>
-                    <td>${time}</td>
-                    <td>${total}</td>
-                    <td>${paid}</td>
-                    <td><span class="status-badge status-${status}">${status}</span></td>
-                    <td>
-                        <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')" ${status === 'Accepted' ? 'disabled' : ''}>قبول</button>
-                        <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')" ${status === 'Cancelled' ? 'disabled' : ''}>إلغاء</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            renderAnalytics(rowsData);
-
-        } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="14">تعذر تحميل البيانات. تأكد من إعدادات الرابط Script URL.</td></tr>';
-        }
-    }
-
-    // حساب وتحليل البيانات للمدير
-    function renderAnalytics(data) {
-        let totalBookings = data.length;
-        let acceptedCount = 0;
-        let totalRevenue = 0;
-        let totalPaid = 0;
-
-        data.forEach(row => {
-            const status = row[14] || 'Pending';
-            const total = parseFloat(row[11]) || 0;
-            const paid = parseFloat(row[12]) || 0;
-
-            if (status === 'Accepted') {
-                acceptedCount++;
-                totalRevenue += total;
-                totalPaid += paid;
-            }
-        });
-
-        document.getElementById('statTotalBookings').innerText = totalBookings;
-        document.getElementById('statAcceptedBookings').innerText = acceptedCount;
-        document.getElementById('statTotalRevenue').innerText = '$' + totalRevenue.toFixed(2);
-        document.getElementById('statTotalPaid').innerText = '$' + totalPaid.toFixed(2);
-    }
-</script>
-
-</body>
-</html>
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
