@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة الحجوزات</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            resize: vertical;
+            grid-column: span 2;
+        }
+        .btn-submit {
+            grid-column: 1 / -1;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-submit:hover {
+            background-color: #219150;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: white;
+        }
+        th, td {
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 13px;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .status-Accepted {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-Cancelled {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .btn-cancel {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+        .btn-cancel:hover {
+            background-color: #c0392b;
+        }
+        .btn-cancel:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>نظام إدارة الحجوزات</h1>
+
+    <!-- نموذج إضافة حجز جديد -->
+    <div class="card">
+        <h2>إضافة حجز جديد</h2>
+        <form id="bookingForm" onsubmit="submitBooking(event)">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>رقم الفووتشر (Voucher No)</label>
+                    <input type="text" id="voucherNo" required>
+                </div>
+                <div class="form-group">
+                    <label>معرف العميل (Client ID)</label>
+                    <input type="text" id="clientID" required>
+                </div>
+                <div class="form-group">
+                    <label>النشاط (Activity)</label>
+                    <input type="text" id="activity" required>
+                </div>
+                <div class="form-group">
+                    <label>المزود (Supplier)</label>
+                    <input type="text" id="supplier">
+                </div>
+                <div class="form-group">
+                    <label>المرشد (Guide)</label>
+                    <input type="text" id="guide">
+                </div>
+                <div class="form-group">
+                    <label>عدد الضيوف (Guests)</label>
+                    <input type="number" id="guests" min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label>تاريخ الحجز (Date)</label>
+                    <input type="date" id="bookingDate" required>
+                </div>
+                <div class="form-group">
+                    <label>وقت الاستلام (Pickup Time)</label>
+                    <input type="time" id="pickupTime">
+                </div>
+                <div class="form-group">
+                    <label>طريقة الدفع (Payment Method)</label>
+                    <select id="paymentMethod">
+                        <option value="Cash">كاش (Cash)</option>
+                        <option value="Card">بطاقة (Card)</option>
+                        <option value="Transfer">تحويل (Transfer)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>المبلغ الإجمالي (Total)</label>
+                    <input type="number" step="0.01" id="totalAmount" required>
+                </div>
+                <div class="form-group">
+                    <label>المبلغ المدفوع (Paid)</label>
+                    <input type="number" step="0.01" id="paidAmount" value="0">
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>ملاحظات (Notes)</label>
+                    <textarea id="notes" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn-submit" id="submitBtn">حفظ الحجز</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- جدول عرض الحجوزات -->
+    <div class="card">
+        <h2>سجل الحجوزات</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Voucher</th>
+                        <th>Client ID</th>
+                        <th>Activity</th>
+                        <th>Supplier</th>
+                        <th>Guide</th>
+                        <th>Guests</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Status</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingsTableBody">
+                    <tr>
+                        <td colspan="12">جاري تحميل البيانات...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ⚠️ استبدل هذا الرابط برابط الـ Web App الخاص بك بعد إعادة النشر (Deployment)
+    const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL';
+
+    // عند تحميل الصفحة، نقوم بجلب البيانات
+    window.onload = function() {
+        loadData();
+    };
+
+    // إرسال حجز جديد
+    async function submitBooking(event) {
+        event.preventDefault();
+        
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'جاري الحفظ...';
+
+        const payload = {
+            voucherNo: document.getElementById('voucherNo').value,
+            clientID: document.getElementById('clientID').value,
+            activity: document.getElementById('activity').value,
+            supplier: document.getElementById('supplier').value,
+            guide: document.getElementById('guide').value,
+            guests: document.getElementById('guests').value,
+            bookingDate: document.getElementById('bookingDate').value,
+            pickupTime: document.getElementById('pickupTime').value,
+            paymentMethod: document.getElementById('paymentMethod').value,
+            totalAmount: document.getElementById('totalAmount').value,
+            paidAmount: document.getElementById('paidAmount').value,
+            notes: document.getElementById('notes').value
+        };
+
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            alert('تم تقديم الحجز بنجاح (مقبول تلقائياً)');
+            document.getElementById('bookingForm').reset();
+            setTimeout(loadData, 1500); // إعادة تحميل السجل
+        } catch (err) {
+            alert('حدث خطأ أثناء حفظ الحجز: ' + err.toString());
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'حفظ الحجز';
+        }
+    }
+
+    // إلغاء الحجز
+    async function cancelBooking(voucherNo) {
+        if (!confirm(`هل أنت تأكد من إلغاء الحجز رقم: ${voucherNo}؟`)) return;
+
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'updateStatus',
+                    voucherNo: voucherNo,
+                    status: 'Cancelled'
+                })
+            });
+
+            alert('تم إرسال طلب إلغاء الحجز بنجاح!');
+            setTimeout(loadData, 1500); // إعادة تحميل البيانات لتحديث الجدول
+        } catch (err) {
+            alert('حدث خطأ أثناء إلغاء الحجز: ' + err.toString());
+        }
+    }
+
+    // جلب بيانات الحجوزات من Google Sheets
+    async function loadData() {
+        const tbody = document.getElementById('bookingsTableBody');
+        try {
+            const response = await fetch(SCRIPT_URL + '?action=read');
+            const data = await response.json();
+            
+            if (!data || data.length <= 1) {
+                tbody.innerHTML = '<tr><td colspan="12">لا توجد حجوزات مسجلة.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            
+            // تجاوز أول صف (العناوين)
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                const voucher = row[0] || '';
+                const clientID = row[1] || '';
+                const activity = row[4] || '';
+                const supplier = row[5] || '';
+                const guide = row[6] || '';
+                const guests = row[7] || '';
+                const date = row[8] || '';
+                const time = row[9] || '';
+                const total = row[11] || '';
+                const paid = row[12] || '';
+                const status = row[14] || 'Accepted';
+
+                const isCancelled = status === 'Cancelled';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${voucher}</td>
+                    <td>${clientID}</td>
+                    <td>${activity}</td>
+                    <td>${supplier}</td>
+                    <td>${guide}</td>
+                    <td>${guests}</td>
+                    <td>${date}</td>
+                    <td>${time}</td>
+                    <td>${total}</td>
+                    <td>${paid}</td>
+                    <td><span class="status-badge status-${status}">${status}</span></td>
+                    <td>
+                        <button 
+                            class="btn-cancel" 
+                            onclick="cancelBooking('${voucher}')" 
+                            ${isCancelled ? 'disabled' : ''}>
+                            ${isCancelled ? 'ملغى' : '❌ Cancel'}
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="12">تعذر تحميل البيانات. تأكد من إعدادات Script URL و Google Sheets.</td></tr>';
+        }
+    }
+</script>
+
+</body>
+</html>
