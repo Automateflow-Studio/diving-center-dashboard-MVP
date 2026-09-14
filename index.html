@@ -501,45 +501,54 @@
             }
         };
 
-        async function handleLogin(e) {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
-    const errElem = document.getElementById('loginError');
-
-    errElem.innerText = "⏳ Checking credentials...";
-
-    try {
-        const res = await fetch(`${SCRIPT_URL}?sheet=Users`);
-        const usersData = await res.json();
-
-        // تشفير كلمة المرور المدخلة عبر SHA-256
-        const hashedPassword = CryptoJS.SHA256(password).toString();
-
-        let foundUser = null;
-        for (let i = 1; i < usersData.length; i++) {
-            if (usersData[i][0].toLowerCase() === email.toLowerCase() && String(usersData[i][1]) === String(hashedPassword)) {
-                foundUser = {
-                    email: usersData[i][0],
-                    role: usersData[i][2],
-                    name: usersData[i][3],
-                    companyID: usersData[i][4] || "COMP_01"
-                };
-                break;
+        function toggleView(view) {
+            if (view === 'register') {
+                document.getElementById('loginCard').style.display = 'none';
+                document.getElementById('registerCard').style.display = 'block';
+            } else {
+                document.getElementById('registerCard').style.display = 'none';
+                document.getElementById('loginCard').style.display = 'block';
             }
         }
 
-        if (foundUser) {
-            currentUser = foundUser;
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-            initApp();
-        } else {
-            errElem.innerText = "❌ Invalid email or password.";
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errElem = document.getElementById('loginError');
+
+            errElem.innerText = "⏳ Checking credentials...";
+
+            try {
+                const res = await fetch(`${SCRIPT_URL}?sheet=Users`);
+                const usersData = await res.json();
+
+                const hashedPassword = CryptoJS.SHA256(password).toString();
+
+                let foundUser = null;
+                for (let i = 1; i < usersData.length; i++) {
+                    if (usersData[i][0].toLowerCase() === email.toLowerCase() && String(usersData[i][1]) === String(hashedPassword)) {
+                        foundUser = {
+                            email: usersData[i][0],
+                            role: usersData[i][2],
+                            name: usersData[i][3],
+                            companyID: usersData[i][4] || "COMP_01"
+                        };
+                        break;
+                    }
+                }
+
+                if (foundUser) {
+                    currentUser = foundUser;
+                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    initApp();
+                } else {
+                    errElem.innerText = "❌ Invalid email or password.";
+                }
+            } catch (err) {
+                errElem.innerText = "❌ Connection error during login.";
+            }
         }
-    } catch (err) {
-        errElem.innerText = "❌ Connection error during login.";
-    }
-}
 
         function initApp() {
             document.getElementById('login-overlay').style.display = 'none';
@@ -680,21 +689,6 @@
             }
         }
 
-        window.callbackSheet2 = function(data) {
-            if (!data || data.length <= 1) {
-                document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
-                document.getElementById('voucherNo').value = "1001";
-                return;
-            }
-            rawBookingsData = data;
-            generateNextVoucherNo();
-            renderBookingsTable(data.slice(1));
-            
-            if (currentUser && currentUser.role.toLowerCase() === 'manager') {
-                updateAnalyticsDashboard();
-            }
-        };
-
         function renderBookingsTable(rows) {
             const tbody = document.getElementById('bookings-table-body');
             tbody.innerHTML = '';
@@ -809,7 +803,7 @@
             }
 
             try {
-                const response = await fetch(SCRIPT_URL, {
+                await fetch(SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
@@ -1048,87 +1042,84 @@
         }
 
         function exportToExcel(tableId) {
-    const table = document.getElementById(tableId);
-    if (!table) {
-        alert("Table not found!");
-        return;
-    }
-    
-    let csv = [];
-    let rows = table.querySelectorAll("tr");
-    
-    for (let i = 0; i < rows.length; i++) {
-        let row = [], cols = rows[i].querySelectorAll("td, th");
-        
-        for (let j = 0; j < cols.length; j++) {
-            // تنظيف النص وتجنب مشاكل الفواصل
-            let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/(\s+)/gm, " ");
-            data = data.replace(/"/g, '""');
-            row.push('"' + data + '"');
+            const table = document.getElementById(tableId);
+            if (!table) {
+                alert("Table not found!");
+                return;
+            }
+            
+            let csv = [];
+            let rows = table.querySelectorAll("tr");
+            
+            for (let i = 0; i < rows.length; i++) {
+                let row = [], cols = rows[i].querySelectorAll("td, th");
+                
+                for (let j = 0; j < cols.length; j++) {
+                    let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/(\s+)/gm, " ");
+                    data = data.replace(/"/g, '""');
+                    row.push('"' + data + '"');
+                }
+                csv.push(row.join(","));
+            }
+            
+            let csvFile = new Blob(["\uFEFF" + csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+            let downloadLink = document.createElement("a");
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.setAttribute("download", tableId + "_export.csv");
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
         }
-        csv.push(row.join(","));
-    }
-    
-    // تحميل الملف بصيغة CSV
-    let csvFile = new Blob(["\uFEFF" + csv.join("\n")], { type: "text/csv;charset=utf-8;" });
-    let downloadLink = document.createElement("a");
-    downloadLink.href = window.URL.createObjectURL(csvFile);
-    downloadLink.setAttribute("download", tableId + "_export.csv");
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-}
-async function handleRegister(e) {
-    e.preventDefault();
-    alert("تم الضغط على زر التسجيل بنجاح! جاري إرسال البيانات...");
-    const companyID = document.getElementById('regCompanyID').value.trim();
-    
-    const mEmail = document.getElementById('managerEmail').value.trim();
-    const mName = document.getElementById('managerName').value.trim();
-    const mPass = document.getElementById('managerPassword').value.trim();
 
-    const sEmail = document.getElementById('salesEmail').value.trim();
-    const sName = document.getElementById('salesName').value.trim();
-    const sPass = document.getElementById('salesPassword').value.trim();
-    
-    const errElem = document.getElementById('regError');
-    errElem.style.color = "#38bdf8";
-    errElem.innerText = "⏳ Registering company...";
+        async function handleRegister(e) {
+            e.preventDefault();
+            const companyID = document.getElementById('regCompanyID').value.trim();
+            
+            const mEmail = document.getElementById('managerEmail').value.trim();
+            const mName = document.getElementById('managerName').value.trim();
+            const mPass = document.getElementById('managerPassword').value.trim();
 
-    const hashedManagerPassword = CryptoJS.SHA256(mPass).toString();
-    const hashedSalesPassword = CryptoJS.SHA256(sPass).toString();
+            const sEmail = document.getElementById('salesEmail').value.trim();
+            const sName = document.getElementById('salesName').value.trim();
+            const sPass = document.getElementById('salesPassword').value.trim();
+            
+            const errElem = document.getElementById('regError');
+            errElem.style.color = "#38bdf8";
+            errElem.innerText = "⏳ Registering company...";
 
-    const payload = {
-        action: "registerCompany",
-        companyID: companyID,
-        manager: [mEmail, hashedManagerPassword, "manager", mName, companyID],
-        sales: [sEmail, hashedSalesPassword, "sales", sName, companyID]
-    };
+            const hashedManagerPassword = CryptoJS.SHA256(mPass).toString();
+            const hashedSalesPassword = CryptoJS.SHA256(sPass).toString();
 
-    try {
-        await fetch(SCRIPT_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify(payload)
-        });
-        
-        errElem.style.color = "#4ade80";
-        errElem.innerText = "✅ Company registered successfully! You can now sign in.";
-        document.getElementById('registerForm').reset();
-        
-        setTimeout(() => {
-            // العودة لواجهة تسجيل الدخول تلقائياً
-            document.getElementById('registerCard').style.display = 'none';
-            document.getElementById('loginCard').style.display = 'block';
-            errElem.innerText = "";
-        }, 2000);
+            const payload = {
+                action: "registerCompany",
+                companyID: companyID,
+                manager: [mEmail, hashedManagerPassword, "manager", mName, companyID],
+                sales: [sEmail, hashedSalesPassword, "sales", sName, companyID]
+            };
 
-    } catch (err) {
-        errElem.style.color = "#f87171";
-        errElem.innerText = "❌ Error connecting to server.";
-    }
-}
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(payload)
+                });
+                
+                errElem.style.color = "#4ade80";
+                errElem.innerText = "✅ Company registered successfully! You can now sign in.";
+                document.getElementById('registerForm').reset();
+                
+                setTimeout(() => {
+                    document.getElementById('registerCard').style.display = 'none';
+                    document.getElementById('loginCard').style.display = 'block';
+                    errElem.innerText = "";
+                }, 2000);
+
+            } catch (err) {
+                errElem.style.color = "#f87171";
+                errElem.innerText = "❌ Error connecting to server.";
+            }
+        }
     </script>
 </body>
 </html>
