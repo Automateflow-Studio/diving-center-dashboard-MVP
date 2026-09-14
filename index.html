@@ -836,6 +836,136 @@
                 uploadBtn.innerText = "✨ Process Document";
             }
         }
+
+        let weeklyChartInstance = null;
+let activitiesChartInstance = null;
+let paymentChartInstance = null;
+
+function updateAnalyticsDashboard() {
+    if (!rawBookingsData || rawBookingsData.length <= 1) return;
+    
+    const rows = rawBookingsData.slice(1);
+    
+    let weeklyCount = 0;
+    let monthlyCount = 0;
+    let fullyPaidCount = 0;
+    let totalMonthlyRevenue = 0;
+    
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    // حساب بداية الأسبوع الحالي (منذ 7 أيام)
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(now.getDate() - 7);
+    
+    let activityCounts = {};
+    let paymentStatuses = { 'Fully Paid': 0, 'Partial / Unpaid': 0 };
+    let weeklyDaysData = { 'Sat': 0, 'Sun': 0, 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0 };
+
+    rows.forEach(row => {
+        // استخراج وتدقيق التواريخ والحسابات
+        const bookingDateStr = row[8] || ''; // عمود التاريخ
+        const total = parseFloat(row[11]) || 0;
+        const paid = parseFloat(row[12]) || 0;
+        const activity = row[4] || 'Other';
+        
+        if (bookingDateStr) {
+            const bDate = new Date(bookingDateStr);
+            if (!isNaN(bDate.getTime())) {
+                // فحص هذا الأسبوع
+                if (bDate >= oneWeekAgo && bDate <= now) {
+                    weeklyCount++;
+                    const dayName = bDate.toLocaleDateString('en-US', { weekday: 'short' });
+                    if (weeklyDaysData[dayName] !== undefined) {
+                        weeklyDaysData[dayName]++;
+                    }
+                }
+                
+                // فحص هذا الشهر
+                if (bDate.getFullYear() === currentYear && bDate.getMonth() === currentMonth) {
+                    monthlyCount++;
+                    totalMonthlyRevenue += paid;
+                }
+            }
+        }
+
+        // حساب الدفعات
+        if (paid >= total && total > 0) {
+            fullyPaidCount++;
+            paymentStatuses['Fully Paid']++;
+        } else {
+            paymentStatuses['Partial / Unpaid']++;
+        }
+
+        // النشاطات الأكثر طلباً
+        activityCounts[activity] = (activityCounts[activity] || 0) + 1;
+    });
+
+    // حساب نسبة المدفوعات
+    const paidRate = rows.length > 0 ? Math.round((fullyPaidCount / rows.length) * 100) : 0;
+
+    // تحديث الـ KPIs في الواجهة
+    document.getElementById('kpi-weekly-clients').innerText = weeklyCount;
+    document.getElementById('kpi-monthly-clients').innerText = monthlyCount;
+    document.getElementById('kpi-paid-rate').innerText = `${paidRate}%`;
+    document.getElementById('kpi-monthly-revenue').innerText = `$${totalMonthlyRevenue.toLocaleString()}`;
+
+    // رسم أو تحديث الـ Charts باستخدام Chart.js
+    renderCharts(weeklyDaysData, activityCounts, paymentStatuses);
+}
+
+function renderCharts(weeklyDays, activities, payments) {
+    // 1. رسم مخطط الأسبوع
+    const weeklyCtx = document.getElementById('weeklyClientsChart').getContext('2d');
+    if (weeklyChartInstance) weeklyChartInstance.destroy();
+    weeklyChartInstance = new Chart(weeklyCtx, {
+        type: 'line',
+        data: {
+            labels: Object.keys(weeklyDays),
+            datasets: [{
+                label: 'Clients',
+                data: Object.values(weeklyDays),
+                borderColor: '#38bdf8',
+                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    // 2. رسم مخطط الأنشطة
+    const actCtx = document.getElementById('activitiesChart').getContext('2d');
+    if (activitiesChartInstance) activitiesChartInstance.destroy();
+    activitiesChartInstance = new Chart(actCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(activities),
+            datasets: [{
+                label: 'Bookings',
+                data: Object.values(activities),
+                backgroundColor: ['#0284c7', '#0f766e', '#16a34a', '#eab308']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+
+    // 3. رسم مخطط الدفعات
+    const payCtx = document.getElementById('paymentChart').getContext('2d');
+    if (paymentChartInstance) paymentChartInstance.destroy();
+    paymentChartInstance = new Chart(payCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(payments),
+            datasets: [{
+                data: Object.values(payments),
+                backgroundColor: ['#22c55e', '#ef4444']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
     </script>
 </body>
 </html>
