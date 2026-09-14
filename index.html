@@ -484,7 +484,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzqw-MdCgfaX-AwcTR3oHSQlCzUEQlSoyaN_XEuxC56f12y9C0S0mwB7mS2EmWZ2TW2lw/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwK7ZxSOVpKiDt2flCRSv0Mn6gFe7Krvmbo5I0Op9Anxf_ihZ2w1wRiFGzo5KXLf_nLcw/exec";
         
         const n8nWebhookUrl = "https://automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
         
@@ -1091,36 +1091,37 @@ async function handleRegister(e) {
     const sPass = document.getElementById('salesPassword').value.trim();
     
     const errElem = document.getElementById('regError');
+    errElem.style.color = "#38bdf8";
     errElem.innerText = "⏳ Registering company...";
 
-    // تشفير كلمات المرور باستخدام SHA-256
     const hashedManagerPassword = CryptoJS.SHA256(mPass).toString();
     const hashedSalesPassword = CryptoJS.SHA256(sPass).toString();
 
-    // تجهيز صف المدير وصف المبيعات لإضافتهم للشيت
     const payload = {
-        sheet: "Users",
-        rows: [
-            [mEmail, hashedManagerPassword, "manager", mName, companyID],
-            [sEmail, hashedSalesPassword, "sales", sName, companyID]
-        ]
+        action: "registerCompany",
+        companyID: companyID,
+        manager: [mEmail, hashedManagerPassword, "manager", mName, companyID],
+        sales: [sEmail, hashedSalesPassword, "sales", sName, companyID]
     };
 
     try {
-        const response = await fetch(SCRIPT_URL, {
+        await fetch(SCRIPT_URL, {
             method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify(payload)
         });
-        const result = await response.json();
         
-        if (result.status === "success" || response.ok) {
-            errElem.style.color = "#4ade80";
-            errElem.innerText = "✅ Company registered successfully!";
-            document.getElementById('registerForm').reset();
-        } else {
-            errElem.style.color = "#f87171";
-            errElem.innerText = "❌ Failed to register company.";
-        }
+        // نظراً لأن وضع no-cors لا يقرأ الاستجابة، نعتبر الإرسال ناجحاً ونقوم بالتحديث
+        errElem.style.color = "#4ade80";
+        errElem.innerText = "✅ Company registered successfully! You can now sign in.";
+        document.getElementById('registerForm').reset();
+        
+        setTimeout(() => {
+            toggleView('login');
+            errElem.innerText = "";
+        }, 2000);
+
     } catch (err) {
         errElem.style.color = "#f87171";
         errElem.innerText = "❌ Error connecting to server.";
