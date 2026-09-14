@@ -6,6 +6,7 @@
     <title>Diving Center Management Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -428,7 +429,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0Vgh3JzhBYjjQE65hDzY7coyzSOhRTUNjQKmFARKwZqYOOPACGgrSZdFY5HtMhfiOtA/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNVJvq3aeSm65h_M002Hewodl7nfhbwtncOCYGIV-fMQdh6Zog6d_0yzg_C787l0Zrjg/exec";
         
         const n8nWebhookUrl = "https://automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
         
@@ -446,41 +447,44 @@
         };
 
         async function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
-            const errElem = document.getElementById('loginError');
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    const errElem = document.getElementById('loginError');
 
-            errElem.innerText = "⏳ Checking credentials...";
+    errElem.innerText = "⏳ Checking credentials...";
 
-            try {
-                const res = await fetch(`${SCRIPT_URL}?sheet=Users`);
-                const usersData = await res.json();
+    try {
+        const res = await fetch(`${SCRIPT_URL}?sheet=Users`);
+        const usersData = await res.json();
 
-                let foundUser = null;
-                for (let i = 1; i < usersData.length; i++) {
-                    if (usersData[i][0].toLowerCase() === email.toLowerCase() && String(usersData[i][1]) === String(password)) {
-                        foundUser = {
-                            email: usersData[i][0],
-                            role: usersData[i][2],
-                            name: usersData[i][3],
-                            companyID: usersData[i][4] || "COMP_01"
-                        };
-                        break;
-                    }
-                }
+        // تشفير كلمة المرور المدخلة عبر SHA-256
+        const hashedPassword = CryptoJS.SHA256(password).toString();
 
-                if (foundUser) {
-                    currentUser = foundUser;
-                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    initApp();
-                } else {
-                    errElem.innerText = "❌ Invalid email or password.";
-                }
-            } catch (err) {
-                errElem.innerText = "❌ Connection error during login.";
+        let foundUser = null;
+        for (let i = 1; i < usersData.length; i++) {
+            if (usersData[i][0].toLowerCase() === email.toLowerCase() && String(usersData[i][1]) === String(hashedPassword)) {
+                foundUser = {
+                    email: usersData[i][0],
+                    role: usersData[i][2],
+                    name: usersData[i][3],
+                    companyID: usersData[i][4] || "COMP_01"
+                };
+                break;
             }
         }
+
+        if (foundUser) {
+            currentUser = foundUser;
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            initApp();
+        } else {
+            errElem.innerText = "❌ Invalid email or password.";
+        }
+    } catch (err) {
+        errElem.innerText = "❌ Connection error during login.";
+    }
+}
 
         function initApp() {
             document.getElementById('login-overlay').style.display = 'none';
