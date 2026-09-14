@@ -611,51 +611,55 @@
         };
 
         function renderBookingsTable(rows) {
-            const tbody = document.getElementById('bookings-table-body');
-            tbody.innerHTML = '';
-            
-            const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
-            if (isManager) {
-                const thActions = document.getElementById('thActions');
-                if(thActions) thActions.style.display = 'table-cell';
+    const tbody = document.getElementById('bookings-table-body');
+    tbody.innerHTML = '';
+    
+    const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
+    if (isManager) {
+        const thActions = document.getElementById('thActions');
+        if(thActions) thActions.style.display = 'table-cell';
+    }
+
+    rows.forEach(row => {
+        const voucher = String(row[0] || '');
+        const clientID = String(row[1] || '').trim();
+        const clientInfo = clientMap[clientID.toLowerCase()] || { name: 'N/A', nationality: 'N/A' };
+        let timeVal = (row[9] || '').includes('T') ? row[9].split('T')[1].substring(0, 5) : (row[9] || '');
+        const status = row[14] || 'Pending';
+
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-voucher', voucher);
+        
+        let html = `
+            <td>${voucher}</td>
+            <td><strong>${clientID}</strong></td>
+            <td>${clientInfo.name}</td>
+            <td>${clientInfo.nationality}</td>
+            <td>${row[4] || ''}</td>
+            <td>${row[5] || ''}</td>
+            <td>${row[6] || ''}</td>
+            <td>${timeVal}</td>
+            <td>${row[10] || ''}</td>
+            <td>$${row[11] || '0'}</td>
+            <td>$${row[12] || '0'}</td>
+            <td class="status-cell"><span class="badge-status status-${status}">${status}</span></td>
+        `;
+
+        if (isManager) {
+            if (status === 'Pending') {
+                html += `<td class="actions-cell">
+                            <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">Accept</button>
+                            <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">Cancel</button>
+                         </td>`;
+            } else {
+                html += `<td class="actions-cell" style="color: #94a3b8; font-size: 0.8rem;">Completed</td>`;
             }
-
-            rows.forEach(row => {
-                const voucher = String(row[0] || '');
-                const clientID = String(row[1] || '').trim();
-                const clientInfo = clientMap[clientID.toLowerCase()] || { name: 'N/A', nationality: 'N/A' };
-                let timeVal = (row[9] || '').includes('T') ? row[9].split('T')[1].substring(0, 5) : (row[9] || '');
-                const status = row[14] || 'Pending';
-
-                const tr = document.createElement('tr');
-                tr.setAttribute('data-voucher', voucher);
-                
-                let html = `
-                    <td>${voucher}</td>
-                    <td><strong>${clientID}</strong></td>
-                    <td>${clientInfo.name}</td>
-                    <td>${clientInfo.nationality}</td>
-                    <td>${row[4] || ''}</td>
-                    <td>${row[5] || ''}</td>
-                    <td>${row[6] || ''}</td>
-                    <td>${timeVal}</td>
-                    <td>${row[10] || ''}</td>
-                    <td>$${row[11] || '0'}</td>
-                    <td>$${row[12] || '0'}</td>
-                    <td class="status-cell"><span class="badge-status status-${status}">${status}</span></td>
-                `;
-
-                if (isManager) {
-                    html += `<td class="actions-cell">
-                                <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">Accept</button>
-                                <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">Cancel</button>
-                             </td>`;
-                }
-
-                tr.innerHTML = html;
-                tbody.appendChild(tr);
-            });
         }
+
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+    });
+}
 
         function renderDataTable(data) {
             const headerTr = document.getElementById('table-header');
