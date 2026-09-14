@@ -542,60 +542,80 @@
         }
 
         async function loadData() {
-            const statusElem = document.getElementById('connection-status');
-            if (statusElem) statusElem.innerText = 'Loading...';
-            const timestamp = new Date().getTime();
-            const compID = currentUser ? currentUser.companyID : "";
+    const statusElem = document.getElementById('connection-status');
+    if (statusElem) statusElem.innerText = 'Loading...';
+    const timestamp = new Date().getTime();
+    const compID = currentUser ? currentUser.companyID : "";
 
-            // تمرير companyID مع الطلب لفلترة الورقة1
-            await new Promise((resolve) => {
-                window.callbackSheet1 = function(data) {
-                    if (data && data.length > 0) {
-                        if (statusElem) {
-                            statusElem.innerText = 'Connected 🟢';
-                            statusElem.className = 'stat-value status-connected';
-                        }
-                        rawData = data;
-                        
-                        const headers = data[0].map(h => String(h).trim().toLowerCase());
-                        const idIndex = headers.indexOf('id_number');
-                        const nameIndex = headers.indexOf('full_name');
-                        const authorityIndex = headers.indexOf('issuing_authority');
-                        const createdAtIndex = headers.indexOf('created_at');
+    // تشغيل الطلبين بالتوازي (Parallel) لتقليص وقت التحميل بشكل ملحوظ
+    const p1 = new Promise((resolve) => {
+        window.callbackSheet1 = function(data) {
+            if (data && data.length > 0) {
+                if (statusElem) {
+                    statusElem.innerText = 'Connected 🟢';
+                    statusElem.className = 'stat-value status-connected';
+                }
+                rawData = data;
+                
+                const headers = data[0].map(h => String(h).trim().toLowerCase());
+                const idIndex = headers.indexOf('id_number');
+                const nameIndex = headers.indexOf('full_name');
+                const authorityIndex = headers.indexOf('issuing_authority');
+                const createdAtIndex = headers.indexOf('created_at');
 
-                        clientMap = {};
-                        data.slice(1).forEach(row => {
-                            const id = String(idIndex !== -1 ? row[idIndex] : (row[3] || row[0])).trim().toLowerCase();
-                            const name = nameIndex !== -1 ? row[nameIndex] : row[0];
-                            const authority = authorityIndex !== -1 ? row[authorityIndex] : (row[2] || 'N/A');
-                            const createdAt = createdAtIndex !== -1 ? row[createdAtIndex] : null;
+                clientMap = {};
+                data.slice(1).forEach(row => {
+                    const id = String(idIndex !== -1 ? row[idIndex] : (row[3] || row[0])).trim().toLowerCase();
+                    const name = nameIndex !== -1 ? row[nameIndex] : row[0];
+                    const authority = authorityIndex !== -1 ? row[authorityIndex] : (row[2] || 'N/A');
+                    const createdAt = createdAtIndex !== -1 ? row[createdAtIndex] : null;
 
-                            if (id) {
-                                clientMap[id] = { 
-                                    name: name || 'Unknown', 
-                                    nationality: authority || 'N/A',
-                                    createdAt: createdAt
-                                };
-                            }
-                        });
-                        
-                        renderDataTable(data);
-                        const totalRecElem = document.getElementById('total-records');
-                        if (totalRecElem) totalRecElem.innerText = data.length > 1 ? data.length - 1 : 0;
+                    if (id) {
+                        clientMap[id] = { 
+                            name: name || 'Unknown', 
+                            nationality: authority || 'N/A',
+                            createdAt: createdAt
+                        };
                     }
-                    resolve();
-                };
+                });
+                
+                renderDataTable(data);
+                const totalRecElem = document.getElementById('total-records');
+                if (totalRecElem) totalRecElem.innerText = data.length > 1 ? data.length - 1 : 0;
+            }
+            resolve();
+        };
 
-                const script1 = document.createElement('script');
-                script1.src = `${SCRIPT_URL}?sheet=الورقة1&companyID=${compID}&callback=callbackSheet1&_t=${timestamp}`;
-                document.body.appendChild(script1);
-            });
+        const script1 = document.createElement('script');
+        script1.src = `${SCRIPT_URL}?sheet=الورقة1&companyID=${compID}&callback=callbackSheet1&_t=${timestamp}`;
+        document.body.appendChild(script1);
+    });
 
-            // تمرير companyID مع الطلب لفلترة Sheet2
-            const script2 = document.createElement('script');
-            script2.src = `${SCRIPT_URL}?sheet=Sheet2&companyID=${compID}&callback=callbackSheet2&_t=${timestamp}`;
-            document.body.appendChild(script2);
-        }
+    const p2 = new Promise((resolve) => {
+        window.callbackSheet2 = function(data) {
+            if (!data || data.length <= 1) {
+                const tbody = document.getElementById('bookings-table-body');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
+                resolve();
+                return;
+            }
+            rawBookingsData = data;
+            renderBookingsTable(data.slice(1));
+            
+            if (currentUser && currentUser.role.toLowerCase() === 'manager') {
+                updateAnalyticsDashboard();
+            }
+            resolve();
+        };
+
+        const script2 = document.createElement('script');
+        script2.src = `${SCRIPT_URL}?sheet=Sheet2&companyID=${compID}&callback=callbackSheet2&_t=${timestamp}`;
+        document.body.appendChild(script2);
+    });
+
+    // الانتظار حتى يتم جلب البيانات للجدولين معاً
+    await Promise.all([p1, p2]);
+}
 
         window.callbackSheet2 = function(data) {
             if (!data || data.length <= 1) {
