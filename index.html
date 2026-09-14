@@ -547,74 +547,62 @@
     const timestamp = new Date().getTime();
     const compID = currentUser ? currentUser.companyID : "";
 
-    // تشغيل الطلبين بالتوازي (Parallel) لتقليص وقت التحميل بشكل ملحوظ
-    const p1 = new Promise((resolve) => {
-        window.callbackSheet1 = function(data) {
-            if (data && data.length > 0) {
-                if (statusElem) {
-                    statusElem.innerText = 'Connected 🟢';
-                    statusElem.className = 'stat-value status-connected';
-                }
-                rawData = data;
-                
-                const headers = data[0].map(h => String(h).trim().toLowerCase());
-                const idIndex = headers.indexOf('id_number');
-                const nameIndex = headers.indexOf('full_name');
-                const authorityIndex = headers.indexOf('issuing_authority');
-                const createdAtIndex = headers.indexOf('created_at');
+    try {
+        // 1. جلب بيانات العملاء أولاً وتجهيز الـ clientMap بدقة
+        const res1 = await fetch(`${SCRIPT_URL}?sheet=الورقة1&companyID=${compID}&_t=${timestamp}`);
+        const data1 = await res1.json();
 
-                clientMap = {};
-                data.slice(1).forEach(row => {
-                    const id = String(idIndex !== -1 ? row[idIndex] : (row[3] || row[0])).trim().toLowerCase();
-                    const name = nameIndex !== -1 ? row[nameIndex] : row[0];
-                    const authority = authorityIndex !== -1 ? row[authorityIndex] : (row[2] || 'N/A');
-                    const createdAt = createdAtIndex !== -1 ? row[createdAtIndex] : null;
-
-                    if (id) {
-                        clientMap[id] = { 
-                            name: name || 'Unknown', 
-                            nationality: authority || 'N/A',
-                            createdAt: createdAt
-                        };
-                    }
-                });
-                
-                renderDataTable(data);
-                const totalRecElem = document.getElementById('total-records');
-                if (totalRecElem) totalRecElem.innerText = data.length > 1 ? data.length - 1 : 0;
+        if (data1 && data1.length > 0) {
+            if (statusElem) {
+                statusElem.innerText = 'Connected 🟢';
+                statusElem.className = 'stat-value status-connected';
             }
-            resolve();
-        };
-
-        const script1 = document.createElement('script');
-        script1.src = `${SCRIPT_URL}?sheet=الورقة1&companyID=${compID}&callback=callbackSheet1&_t=${timestamp}`;
-        document.body.appendChild(script1);
-    });
-
-    const p2 = new Promise((resolve) => {
-        window.callbackSheet2 = function(data) {
-            if (!data || data.length <= 1) {
-                const tbody = document.getElementById('bookings-table-body');
-                if (tbody) tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
-                resolve();
-                return;
-            }
-            rawBookingsData = data;
-            renderBookingsTable(data.slice(1));
+            rawData = data1;
             
-            if (currentUser && currentUser.role.toLowerCase() === 'manager') {
-                updateAnalyticsDashboard();
-            }
-            resolve();
-        };
+            const headers = data1[0].map(h => String(h).trim().toLowerCase());
+            const idIndex = headers.indexOf('id_number') !== -1 ? headers.indexOf('id_number') : 3;
+            const nameIndex = headers.indexOf('full_name') !== -1 ? headers.indexOf('full_name') : 0;
+            const authorityIndex = headers.indexOf('issuing_authority') !== -1 ? headers.indexOf('issuing_authority') : 2;
 
-        const script2 = document.createElement('script');
-        script2.src = `${SCRIPT_URL}?sheet=Sheet2&companyID=${compID}&callback=callbackSheet2&_t=${timestamp}`;
-        document.body.appendChild(script2);
-    });
+            clientMap = {};
+            data1.slice(1).forEach(row => {
+                const id = String(row[idIndex] || '').trim().toLowerCase();
+                const name = row[nameIndex] || 'Unknown';
+                const authority = row[authorityIndex] || 'N/A';
 
-    // الانتظار حتى يتم جلب البيانات للجدولين معاً
-    await Promise.all([p1, p2]);
+                if (id) {
+                    clientMap[id] = { name: name, nationality: authority };
+                }
+            });
+            
+            renderDataTable(data1);
+            const totalRecElem = document.getElementById('total-records');
+            if (totalRecElem) totalRecElem.innerText = data1.length > 1 ? data1.length - 1 : 0;
+        }
+
+        // 2. بعد ضمان جاهزية الـ clientMap، يتم جلب وعرض الحجوزات
+        const res2 = await fetch(`${SCRIPT_URL}?sheet=Sheet2&companyID=${compID}&_t=${timestamp}`);
+        const data2 = await res2.json();
+
+        if (!data2 || data2.length <= 1) {
+            const tbody = document.getElementById('bookings-table-body');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
+            return;
+        }
+        
+        rawBookingsData = data2;
+        renderBookingsTable(data2.slice(1));
+        
+        if (currentUser && currentUser.role.toLowerCase() === 'manager') {
+            updateAnalyticsDashboard();
+        }
+
+    } catch (err) {
+        if (statusElem) {
+            statusElem.innerText = 'Connection Error 🔴';
+            statusElem.className = 'stat-value';
+        }
+    }
 }
 
         window.callbackSheet2 = function(data) {
