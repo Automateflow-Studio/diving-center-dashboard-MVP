@@ -987,6 +987,38 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
         }
+
+        function exportToExcel(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) {
+        alert("Table not found!");
+        return;
+    }
+    
+    let csv = [];
+    let rows = table.querySelectorAll("tr");
+    
+    for (let i = 0; i < rows.length; i++) {
+        let row = [], cols = rows[i].querySelectorAll("td, th");
+        
+        for (let j = 0; j < cols.length; j++) {
+            // تنظيف النص وتجنب مشاكل الفواصل
+            let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/(\s+)/gm, " ");
+            data = data.replace(/"/g, '""');
+            row.push('"' + data + '"');
+        }
+        csv.push(row.join(","));
+    }
+    
+    // تحميل الملف بصيغة CSV
+    let csvFile = new Blob(["\uFEFF" + csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+    let downloadLink = document.createElement("a");
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.setAttribute("download", tableId + "_export.csv");
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
     </script>
 </body>
 </html>
