@@ -260,8 +260,8 @@
                 <form id="bookingForm" onsubmit="submitBooking(event)">
                     <div class="booking-grid">
                         <div class="form-group">
-                            <label>Voucher no.</label>
-                            <input type="text" id="voucherNo" class="form-control" placeholder="12234" required>
+                            <label>Voucher no. (Auto)</label>
+                            <input type="text" id="voucherNo" class="form-control" readonly required>
                         </div>
                         <div class="form-group">
                             <label>Client ID no.</label>
@@ -464,7 +464,7 @@
                             email: usersData[i][0],
                             role: usersData[i][2],
                             name: usersData[i][3],
-                            companyID: usersData[i][4] || "COMP_01" // جلب معرف الشركة
+                            companyID: usersData[i][4] || "COMP_01"
                         };
                         break;
                     }
@@ -541,76 +541,94 @@
             }
         }
 
-        async function loadData() {
-    const statusElem = document.getElementById('connection-status');
-    if (statusElem) statusElem.innerText = 'Loading...';
-    const timestamp = new Date().getTime();
-    const compID = currentUser ? currentUser.companyID : "";
-
-    try {
-        // 1. جلب بيانات العملاء أولاً وتجهيز الـ clientMap بدقة
-        const res1 = await fetch(`${SCRIPT_URL}?sheet=الورقة1&companyID=${compID}&_t=${timestamp}`);
-        const data1 = await res1.json();
-
-        if (data1 && data1.length > 0) {
-            if (statusElem) {
-                statusElem.innerText = 'Connected 🟢';
-                statusElem.className = 'stat-value status-connected';
+        function generateNextVoucherNo() {
+            if (!rawBookingsData || rawBookingsData.length <= 1) {
+                document.getElementById('voucherNo').value = "1001";
+                return;
             }
-            rawData = data1;
             
-            const headers = data1[0].map(h => String(h).trim().toLowerCase());
-            const idIndex = headers.indexOf('id_number') !== -1 ? headers.indexOf('id_number') : 3;
-            const nameIndex = headers.indexOf('full_name') !== -1 ? headers.indexOf('full_name') : 0;
-            const authorityIndex = headers.indexOf('issuing_authority') !== -1 ? headers.indexOf('issuing_authority') : 2;
-
-            clientMap = {};
-            data1.slice(1).forEach(row => {
-                const id = String(row[idIndex] || '').trim().toLowerCase();
-                const name = row[nameIndex] || 'Unknown';
-                const authority = row[authorityIndex] || 'N/A';
-
-                if (id) {
-                    clientMap[id] = { name: name, nationality: authority };
+            let maxVoucher = 1000;
+            for (let i = 1; i < rawBookingsData.length; i++) {
+                let v = parseInt(rawBookingsData[i][0]);
+                if (!isNaN(v) && v > maxVoucher) {
+                    maxVoucher = v;
                 }
-            });
-            
-            renderDataTable(data1);
-            const totalRecElem = document.getElementById('total-records');
-            if (totalRecElem) totalRecElem.innerText = data1.length > 1 ? data1.length - 1 : 0;
+            }
+            document.getElementById('voucherNo').value = maxVoucher + 1;
         }
 
-        // 2. بعد ضمان جاهزية الـ clientMap، يتم جلب وعرض الحجوزات
-        const res2 = await fetch(`${SCRIPT_URL}?sheet=Sheet2&companyID=${compID}&_t=${timestamp}`);
-        const data2 = await res2.json();
+        async function loadData() {
+            const statusElem = document.getElementById('connection-status');
+            if (statusElem) statusElem.innerText = 'Loading...';
+            const timestamp = new Date().getTime();
+            const compID = currentUser ? currentUser.companyID : "";
 
-        if (!data2 || data2.length <= 1) {
-            const tbody = document.getElementById('bookings-table-body');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
-            return;
-        }
-        
-        rawBookingsData = data2;
-        renderBookingsTable(data2.slice(1));
-        
-        if (currentUser && currentUser.role.toLowerCase() === 'manager') {
-            updateAnalyticsDashboard();
-        }
+            try {
+                const res1 = await fetch(`${SCRIPT_URL}?sheet=الورقة1&companyID=${compID}&_t=${timestamp}`);
+                const data1 = await res1.json();
 
-    } catch (err) {
-        if (statusElem) {
-            statusElem.innerText = 'Connection Error 🔴';
-            statusElem.className = 'stat-value';
+                if (data1 && data1.length > 0) {
+                    if (statusElem) {
+                        statusElem.innerText = 'Connected 🟢';
+                        statusElem.className = 'stat-value status-connected';
+                    }
+                    rawData = data1;
+                    
+                    const headers = data1[0].map(h => String(h).trim().toLowerCase());
+                    const idIndex = headers.indexOf('id_number') !== -1 ? headers.indexOf('id_number') : 3;
+                    const nameIndex = headers.indexOf('full_name') !== -1 ? headers.indexOf('full_name') : 0;
+                    const authorityIndex = headers.indexOf('issuing_authority') !== -1 ? headers.indexOf('issuing_authority') : 2;
+
+                    clientMap = {};
+                    data1.slice(1).forEach(row => {
+                        const id = String(row[idIndex] || '').trim().toLowerCase();
+                        const name = row[nameIndex] || 'Unknown';
+                        const authority = row[authorityIndex] || 'N/A';
+
+                        if (id) {
+                            clientMap[id] = { name: name, nationality: authority };
+                        }
+                    });
+                    
+                    renderDataTable(data1);
+                    const totalRecElem = document.getElementById('total-records');
+                    if (totalRecElem) totalRecElem.innerText = data1.length > 1 ? data1.length - 1 : 0;
+                }
+
+                const res2 = await fetch(`${SCRIPT_URL}?sheet=Sheet2&companyID=${compID}&_t=${timestamp}`);
+                const data2 = await res2.json();
+
+                if (!data2 || data2.length <= 1) {
+                    const tbody = document.getElementById('bookings-table-body');
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
+                    document.getElementById('voucherNo').value = "1001";
+                    return;
+                }
+                
+                rawBookingsData = data2;
+                generateNextVoucherNo();
+                renderBookingsTable(data2.slice(1));
+                
+                if (currentUser && currentUser.role.toLowerCase() === 'manager') {
+                    updateAnalyticsDashboard();
+                }
+
+            } catch (err) {
+                if (statusElem) {
+                    statusElem.innerText = 'Connection Error 🔴';
+                    statusElem.className = 'stat-value';
+                }
+            }
         }
-    }
-}
 
         window.callbackSheet2 = function(data) {
             if (!data || data.length <= 1) {
                 document.getElementById('bookings-table-body').innerHTML = '<tr><td colspan="13" class="empty-state">No bookings recorded yet.</td></tr>';
+                document.getElementById('voucherNo').value = "1001";
                 return;
             }
             rawBookingsData = data;
+            generateNextVoucherNo();
             renderBookingsTable(data.slice(1));
             
             if (currentUser && currentUser.role.toLowerCase() === 'manager') {
@@ -619,55 +637,55 @@
         };
 
         function renderBookingsTable(rows) {
-    const tbody = document.getElementById('bookings-table-body');
-    tbody.innerHTML = '';
-    
-    const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
-    if (isManager) {
-        const thActions = document.getElementById('thActions');
-        if(thActions) thActions.style.display = 'table-cell';
-    }
-
-    rows.forEach(row => {
-        const voucher = String(row[0] || '');
-        const clientID = String(row[1] || '').trim();
-        const clientInfo = clientMap[clientID.toLowerCase()] || { name: 'N/A', nationality: 'N/A' };
-        let timeVal = (row[9] || '').includes('T') ? row[9].split('T')[1].substring(0, 5) : (row[9] || '');
-        const status = row[14] || 'Pending';
-
-        const tr = document.createElement('tr');
-        tr.setAttribute('data-voucher', voucher);
-        
-        let html = `
-            <td>${voucher}</td>
-            <td><strong>${clientID}</strong></td>
-            <td>${clientInfo.name}</td>
-            <td>${clientInfo.nationality}</td>
-            <td>${row[4] || ''}</td>
-            <td>${row[5] || ''}</td>
-            <td>${row[6] || ''}</td>
-            <td>${timeVal}</td>
-            <td>${row[10] || ''}</td>
-            <td>$${row[11] || '0'}</td>
-            <td>$${row[12] || '0'}</td>
-            <td class="status-cell"><span class="badge-status status-${status}">${status}</span></td>
-        `;
-
-        if (isManager) {
-            if (status === 'Pending') {
-                html += `<td class="actions-cell">
-                            <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">Accept</button>
-                            <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">Cancel</button>
-                         </td>`;
-            } else {
-                html += `<td class="actions-cell" style="color: #94a3b8; font-size: 0.8rem;">Completed</td>`;
+            const tbody = document.getElementById('bookings-table-body');
+            tbody.innerHTML = '';
+            
+            const isManager = currentUser && currentUser.role.toLowerCase() === 'manager';
+            if (isManager) {
+                const thActions = document.getElementById('thActions');
+                if(thActions) thActions.style.display = 'table-cell';
             }
-        }
 
-        tr.innerHTML = html;
-        tbody.appendChild(tr);
-    });
-}
+            rows.forEach(row => {
+                const voucher = String(row[0] || '');
+                const clientID = String(row[1] || '').trim();
+                const clientInfo = clientMap[clientID.toLowerCase()] || { name: 'N/A', nationality: 'N/A' };
+                let timeVal = (row[9] || '').includes('T') ? row[9].split('T')[1].substring(0, 5) : (row[9] || '');
+                const status = row[14] || 'Pending';
+
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-voucher', voucher);
+                
+                let html = `
+                    <td>${voucher}</td>
+                    <td><strong>${clientID}</strong></td>
+                    <td>${clientInfo.name}</td>
+                    <td>${clientInfo.nationality}</td>
+                    <td>${row[4] || ''}</td>
+                    <td>${row[5] || ''}</td>
+                    <td>${row[6] || ''}</td>
+                    <td>${timeVal}</td>
+                    <td>${row[10] || ''}</td>
+                    <td>$${row[11] || '0'}</td>
+                    <td>$${row[12] || '0'}</td>
+                    <td class="status-cell"><span class="badge-status status-${status}">${status}</span></td>
+                `;
+
+                if (isManager) {
+                    if (status === 'Pending') {
+                        html += `<td class="actions-cell">
+                                    <button class="btn-action btn-accept" onclick="updateBookingStatus('${voucher}', 'Accepted')">Accept</button>
+                                    <button class="btn-action btn-cancel" onclick="updateBookingStatus('${voucher}', 'Cancelled')">Cancel</button>
+                                 </td>`;
+                    } else {
+                        html += `<td class="actions-cell" style="color: #94a3b8; font-size: 0.8rem;">Completed</td>`;
+                    }
+                }
+
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+        }
 
         function renderDataTable(data) {
             const headerTr = document.getElementById('table-header');
@@ -726,44 +744,50 @@
         }
 
         async function updateBookingStatus(voucher, newStatus) {
-    const statusCell = document.querySelector(`tr[data-voucher="${voucher}"] .status-cell`);
-    if (statusCell) {
-        statusCell.innerHTML = `<span class="badge-status">Updating...</span>`;
-    }
+            const statusCell = document.querySelector(`tr[data-voucher="${voucher}"] .status-cell`);
+            if (statusCell) {
+                statusCell.innerHTML = `<span class="badge-status">Updating...</span>`;
+            }
 
-    try {
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: "updateStatus",
-                voucherNo: voucher,
-                status: newStatus,
-                companyID: currentUser ? currentUser.companyID : ""
-            })
-        });
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: "updateStatus",
+                        voucherNo: voucher,
+                        status: newStatus,
+                        companyID: currentUser ? currentUser.companyID : ""
+                    })
+                });
 
-        // بما أن mode هو no-cors، نقوم بتحديث الواجهة وإعادة التحميل بعد ثوانٍ لضمان حفظ البيانات
-        setTimeout(() => {
-            loadData();
-        }, 1500);
-        
-    } catch (error) {
-        alert("❌ Failed to update booking status.");
-        loadData();
-    }
-}
+                setTimeout(() => {
+                    loadData();
+                }, 1500);
+                
+            } catch (error) {
+                alert("❌ Failed to update booking status.");
+                loadData();
+            }
+        }
 
         async function submitBooking(e) {
             e.preventDefault();
             const btn = document.getElementById('saveBookingBtn');
             const statusSpan = document.getElementById('bookingStatus');
+            const voucherInputVal = document.getElementById('voucherNo').value.trim();
+
+            if (!voucherInputVal) {
+                alert("⚠️ Voucher number not generated yet.");
+                return;
+            }
+
             btn.disabled = true;
             statusSpan.innerText = "⏳ Saving booking...";
 
             const bookingData = {
-                voucherNo: document.getElementById('voucherNo').value.trim(),
+                voucherNo: voucherInputVal,
                 clientID: document.getElementById('clientID').value.trim(),
                 activity: document.getElementById('activity').value,
                 supplier: document.getElementById('supplier').value.trim(),
@@ -775,7 +799,7 @@
                 totalAmount: document.getElementById('totalAmount').value,
                 paidAmount: document.getElementById('paidAmount').value,
                 notes: document.getElementById('notes').value.trim(),
-                companyID: currentUser ? currentUser.companyID : "" // إرسال معرف الشركة مع الحجز
+                companyID: currentUser ? currentUser.companyID : ""
             };
 
             try {
@@ -799,6 +823,7 @@
                 btn.disabled = false;
             }
         }
+
         async function uploadDocument(e) {
             e.preventDefault();
             const fileInput = document.getElementById('fileInput');
@@ -846,134 +871,122 @@
         }
 
         let weeklyChartInstance = null;
-let activitiesChartInstance = null;
-let paymentChartInstance = null;
+        let activitiesChartInstance = null;
+        let paymentChartInstance = null;
 
-function updateAnalyticsDashboard() {
-    if (!rawBookingsData || rawBookingsData.length <= 1) return;
-    
-    const rows = rawBookingsData.slice(1);
-    
-    let weeklyCount = 0;
-    let monthlyCount = 0;
-    let fullyPaidCount = 0;
-    let totalMonthlyRevenue = 0;
-    
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    
-    // حساب بداية الأسبوع الحالي (منذ 7 أيام)
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(now.getDate() - 7);
-    
-    let activityCounts = {};
-    let paymentStatuses = { 'Fully Paid': 0, 'Partial / Unpaid': 0 };
-    let weeklyDaysData = { 'Sat': 0, 'Sun': 0, 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0 };
+        function updateAnalyticsDashboard() {
+            if (!rawBookingsData || rawBookingsData.length <= 1) return;
+            
+            const rows = rawBookingsData.slice(1);
+            
+            let weeklyCount = 0;
+            let monthlyCount = 0;
+            let fullyPaidCount = 0;
+            let totalMonthlyRevenue = 0;
+            
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+            
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(now.getDate() - 7);
+            
+            let activityCounts = {};
+            let paymentStatuses = { 'Fully Paid': 0, 'Partial / Unpaid': 0 };
+            let weeklyDaysData = { 'Sat': 0, 'Sun': 0, 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0 };
 
-    rows.forEach(row => {
-        // استخراج وتدقيق التواريخ والحسابات
-        const bookingDateStr = row[8] || ''; // عمود التاريخ
-        const total = parseFloat(row[11]) || 0;
-        const paid = parseFloat(row[12]) || 0;
-        const activity = row[4] || 'Other';
-        
-        if (bookingDateStr) {
-            const bDate = new Date(bookingDateStr);
-            if (!isNaN(bDate.getTime())) {
-                // فحص هذا الأسبوع
-                if (bDate >= oneWeekAgo && bDate <= now) {
-                    weeklyCount++;
-                    const dayName = bDate.toLocaleDateString('en-US', { weekday: 'short' });
-                    if (weeklyDaysData[dayName] !== undefined) {
-                        weeklyDaysData[dayName]++;
+            rows.forEach(row => {
+                const bookingDateStr = row[8] || '';
+                const total = parseFloat(row[11]) || 0;
+                const paid = parseFloat(row[12]) || 0;
+                const activity = row[4] || 'Other';
+                
+                if (bookingDateStr) {
+                    const bDate = new Date(bookingDateStr);
+                    if (!isNaN(bDate.getTime())) {
+                        if (bDate >= oneWeekAgo && bDate <= now) {
+                            weeklyCount++;
+                            const dayName = bDate.toLocaleDateString('en-US', { weekday: 'short' });
+                            if (weeklyDaysData[dayName] !== undefined) {
+                                weeklyDaysData[dayName]++;
+                            }
+                        }
+                        
+                        if (bDate.getFullYear() === currentYear && bDate.getMonth() === currentMonth) {
+                            monthlyCount++;
+                            totalMonthlyRevenue += paid;
+                        }
                     }
                 }
-                
-                // فحص هذا الشهر
-                if (bDate.getFullYear() === currentYear && bDate.getMonth() === currentMonth) {
-                    monthlyCount++;
-                    totalMonthlyRevenue += paid;
+
+                if (paid >= total && total > 0) {
+                    fullyPaidCount++;
+                    paymentStatuses['Fully Paid']++;
+                } else {
+                    paymentStatuses['Partial / Unpaid']++;
                 }
-            }
+
+                activityCounts[activity] = (activityCounts[activity] || 0) + 1;
+            });
+
+            const paidRate = rows.length > 0 ? Math.round((fullyPaidCount / rows.length) * 100) : 0;
+
+            document.getElementById('kpi-weekly-clients').innerText = weeklyCount;
+            document.getElementById('kpi-monthly-clients').innerText = monthlyCount;
+            document.getElementById('kpi-paid-rate').innerText = `${paidRate}%`;
+            document.getElementById('kpi-monthly-revenue').innerText = `$${totalMonthlyRevenue.toLocaleString()}`;
+
+            renderCharts(weeklyDaysData, activityCounts, paymentStatuses);
         }
 
-        // حساب الدفعات
-        if (paid >= total && total > 0) {
-            fullyPaidCount++;
-            paymentStatuses['Fully Paid']++;
-        } else {
-            paymentStatuses['Partial / Unpaid']++;
+        function renderCharts(weeklyDays, activities, payments) {
+            const weeklyCtx = document.getElementById('weeklyClientsChart').getContext('2d');
+            if (weeklyChartInstance) weeklyChartInstance.destroy();
+            weeklyChartInstance = new Chart(weeklyCtx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(weeklyDays),
+                    datasets: [{
+                        label: 'Clients',
+                        data: Object.values(weeklyDays),
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            const actCtx = document.getElementById('activitiesChart').getContext('2d');
+            if (activitiesChartInstance) activitiesChartInstance.destroy();
+            activitiesChartInstance = new Chart(actCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(activities),
+                    datasets: [{
+                        label: 'Bookings',
+                        data: Object.values(activities),
+                        backgroundColor: ['#0284c7', '#0f766e', '#16a34a', '#eab308']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            const payCtx = document.getElementById('paymentChart').getContext('2d');
+            if (paymentChartInstance) paymentChartInstance.destroy();
+            paymentChartInstance = new Chart(payCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(payments),
+                    datasets: [{
+                        data: Object.values(payments),
+                        backgroundColor: ['#22c55e', '#ef4444']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
         }
-
-        // النشاطات الأكثر طلباً
-        activityCounts[activity] = (activityCounts[activity] || 0) + 1;
-    });
-
-    // حساب نسبة المدفوعات
-    const paidRate = rows.length > 0 ? Math.round((fullyPaidCount / rows.length) * 100) : 0;
-
-    // تحديث الـ KPIs في الواجهة
-    document.getElementById('kpi-weekly-clients').innerText = weeklyCount;
-    document.getElementById('kpi-monthly-clients').innerText = monthlyCount;
-    document.getElementById('kpi-paid-rate').innerText = `${paidRate}%`;
-    document.getElementById('kpi-monthly-revenue').innerText = `$${totalMonthlyRevenue.toLocaleString()}`;
-
-    // رسم أو تحديث الـ Charts باستخدام Chart.js
-    renderCharts(weeklyDaysData, activityCounts, paymentStatuses);
-}
-
-function renderCharts(weeklyDays, activities, payments) {
-    // 1. رسم مخطط الأسبوع
-    const weeklyCtx = document.getElementById('weeklyClientsChart').getContext('2d');
-    if (weeklyChartInstance) weeklyChartInstance.destroy();
-    weeklyChartInstance = new Chart(weeklyCtx, {
-        type: 'line',
-        data: {
-            labels: Object.keys(weeklyDays),
-            datasets: [{
-                label: 'Clients',
-                data: Object.values(weeklyDays),
-                borderColor: '#38bdf8',
-                backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                fill: true,
-                tension: 0.3
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-    });
-
-    // 2. رسم مخطط الأنشطة
-    const actCtx = document.getElementById('activitiesChart').getContext('2d');
-    if (activitiesChartInstance) activitiesChartInstance.destroy();
-    activitiesChartInstance = new Chart(actCtx, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(activities),
-            datasets: [{
-                label: 'Bookings',
-                data: Object.values(activities),
-                backgroundColor: ['#0284c7', '#0f766e', '#16a34a', '#eab308']
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-    });
-
-    // 3. رسم مخطط الدفعات
-    const payCtx = document.getElementById('paymentChart').getContext('2d');
-    if (paymentChartInstance) paymentChartInstance.destroy();
-    paymentChartInstance = new Chart(payCtx, {
-        type: 'doughnut',
-        data: {
-            labels: Object.keys(payments),
-            datasets: [{
-                data: Object.values(payments),
-                backgroundColor: ['#22c55e', '#ef4444']
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-}
     </script>
 </body>
 </html>
