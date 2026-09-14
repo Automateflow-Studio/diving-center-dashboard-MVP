@@ -218,8 +218,11 @@
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div class="login-card">
+    <!-- واجهة تسجيل الدخول (Login) -->
+    <div id="login-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 1000;">
+        
+        <!-- كارد تسجيل الدخول -->
+        <div id="loginCard" class="login-card" style="background-color: #1e293b; padding: 32px; border-radius: 12px; border: 1px solid #334155; width: 100%; max-width: 400px;">
             <h2>🔐 Diving Center Login</h2>
             <form onsubmit="handleLogin(event)">
                 <div class="form-group">
@@ -233,6 +236,58 @@
                 <button type="submit" class="btn-submit" style="width: 100%; margin-top: 10px;">Sign In</button>
                 <p id="loginError" style="color: #f87171; text-align: center; margin-top: 10px; font-size: 0.85rem;"></p>
             </form>
+            <!-- زر الانتقال إلى إنشاء شركة جديدة -->
+            <p style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 0.9rem;">
+                Don't have a company account? <a href="#" onclick="toggleView('register')" style="color: #38bdf8; text-decoration: none; font-weight: bold;">Register Company</a>
+            </p>
+        </div>
+
+        <!-- كارد تسجيل شركة جديدة (مخفي افتراضياً) -->
+        <div id="registerCard" class="login-card" style="display: none; background-color: #1e293b; padding: 32px; border-radius: 12px; border: 1px solid #334155; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto;">
+            <h2 style="color: #38bdf8; margin-bottom: 20px; text-align: center;">🏢 Register New Company</h2>
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>Company ID (e.g. COMP_04)</label>
+                    <input type="text" id="regCompanyID" class="form-control" required>
+                </div>
+                
+                <hr style="border-color: #334155; margin: 15px 0;">
+                <p style="color: #38bdf8; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem;">Manager Account</p>
+                <div class="form-group">
+                    <label>Manager Email</label>
+                    <input type="email" id="managerEmail" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Manager Name</label>
+                    <input type="text" id="managerName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Manager Password</label>
+                    <input type="password" id="managerPassword" class="form-control" required>
+                </div>
+
+                <hr style="border-color: #334155; margin: 15px 0;">
+                <p style="color: #38bdf8; font-weight: bold; margin-bottom: 10px; font-size: 0.9rem;">Sales Account</p>
+                <div class="form-group">
+                    <label>Sales Email</label>
+                    <input type="email" id="salesEmail" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Sales Name</label>
+                    <input type="text" id="salesName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Sales Password</label>
+                    <input type="password" id="salesPassword" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn-submit" style="width: 100%; margin-top: 10px; background-color: #0d9488;">Register Company</button>
+                <p id="regError" style="text-align: center; margin-top: 10px; font-size: 0.85rem;"></p>
+            </form>
+            <!-- زر العودة لتسجيل الدخول -->
+            <p style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 0.9rem;">
+                Already have an account? <a href="#" onclick="toggleView('login')" style="color: #38bdf8; text-decoration: none; font-weight: bold;">Sign In</a>
+            </p>
         </div>
     </div>
 
@@ -429,7 +484,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNVJvq3aeSm65h_M002Hewodl7nfhbwtncOCYGIV-fMQdh6Zog6d_0yzg_C787l0Zrjg/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzqw-MdCgfaX-AwcTR3oHSQlCzUEQlSoyaN_XEuxC56f12y9C0S0mwB7mS2EmWZ2TW2lw/exec";
         
         const n8nWebhookUrl = "https://automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
         
@@ -1022,6 +1077,54 @@
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
+}
+async function handleRegister(e) {
+    e.preventDefault();
+    const companyID = document.getElementById('regCompanyID').value.trim();
+    
+    const mEmail = document.getElementById('managerEmail').value.trim();
+    const mName = document.getElementById('managerName').value.trim();
+    const mPass = document.getElementById('managerPassword').value.trim();
+
+    const sEmail = document.getElementById('salesEmail').value.trim();
+    const sName = document.getElementById('salesName').value.trim();
+    const sPass = document.getElementById('salesPassword').value.trim();
+    
+    const errElem = document.getElementById('regError');
+    errElem.innerText = "⏳ Registering company...";
+
+    // تشفير كلمات المرور باستخدام SHA-256
+    const hashedManagerPassword = CryptoJS.SHA256(mPass).toString();
+    const hashedSalesPassword = CryptoJS.SHA256(sPass).toString();
+
+    // تجهيز صف المدير وصف المبيعات لإضافتهم للشيت
+    const payload = {
+        sheet: "Users",
+        rows: [
+            [mEmail, hashedManagerPassword, "manager", mName, companyID],
+            [sEmail, hashedSalesPassword, "sales", sName, companyID]
+        ]
+    };
+
+    try {
+        const response = await fetch(SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        
+        if (result.status === "success" || response.ok) {
+            errElem.style.color = "#4ade80";
+            errElem.innerText = "✅ Company registered successfully!";
+            document.getElementById('registerForm').reset();
+        } else {
+            errElem.style.color = "#f87171";
+            errElem.innerText = "❌ Failed to register company.";
+        }
+    } catch (err) {
+        errElem.style.color = "#f87171";
+        errElem.innerText = "❌ Error connecting to server.";
+    }
 }
     </script>
 </body>
