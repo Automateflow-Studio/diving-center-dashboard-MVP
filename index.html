@@ -714,8 +714,34 @@
         }
 
         async function updateBookingStatus(voucher, newStatus) {
-            alert(`Booking ${voucher} status changed to ${newStatus}`);
-        }
+    const statusCell = document.querySelector(`tr[data-voucher="${voucher}"] .status-cell`);
+    if (statusCell) {
+        statusCell.innerHTML = `<span class="badge-status">Updating...</span>`;
+    }
+
+    try {
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: "updateStatus",
+                voucherNo: voucher,
+                status: newStatus,
+                companyID: currentUser ? currentUser.companyID : ""
+            })
+        });
+
+        // بما أن mode هو no-cors، نقوم بتحديث الواجهة وإعادة التحميل بعد ثوانٍ لضمان حفظ البيانات
+        setTimeout(() => {
+            loadData();
+        }, 1500);
+        
+    } catch (error) {
+        alert("❌ Failed to update booking status.");
+        loadData();
+    }
+}
 
         async function submitBooking(e) {
             e.preventDefault();
