@@ -775,7 +775,7 @@
             const file = fileInput.files[0];
             const formData = new FormData();
             formData.append('info', file);
-
+            formData.append('companyID', currentUser ? currentUser.companyID : "");
             uploadBtn.disabled = true;
             uploadBtn.innerText = "⏳ Processing Document...";
             uploadStatus.style.display = "block";
