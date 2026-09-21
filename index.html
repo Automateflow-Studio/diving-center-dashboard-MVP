@@ -208,21 +208,13 @@
             position: relative;
             height: 280px;
         }
-        .upload-form {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
     </style>
 </head>
 <body>
 
     <!-- واجهة تسجيل الدخول (Login) -->
-    <div id="login-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #0f172a; display: flex; justify-content: center; align-items: center; z-index: 1000;">
-        
-        <!-- كارد تسجيل الدخول -->
-        <div id="loginCard" class="login-card" style="background-color: #1e293b; padding: 32px; border-radius: 12px; border: 1px solid #334155; width: 100%; max-width: 400px;">
+    <div id="login-overlay">
+        <div id="loginCard" class="login-card">
             <h2>🔐 Diving Center Login</h2>
             <form onsubmit="handleLogin(event)">
                 <div class="form-group">
@@ -236,18 +228,15 @@
                 <button type="submit" class="btn-submit" style="width: 100%; margin-top: 10px;">Sign In</button>
                 <p id="loginError" style="color: #f87171; text-align: center; margin-top: 10px; font-size: 0.85rem;"></p>
             </form>
-            <!-- زر الانتقال إلى إنشاء شركة جديدة -->
             <p style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 0.9rem;">
                 Don't have a company account? <a href="#" onclick="toggleView('register')" style="color: #38bdf8; text-decoration: none; font-weight: bold;">Register Company</a>
             </p>
-            <!-- خيار اعطاء فيدباك تحت Register -->
             <p style="text-align: center; margin-top: 10px; color: #94a3b8; font-size: 0.9rem;">
                 Have any feedback? <a href="https://docs.google.com/forms/d/e/1FAIpQLScxrpWz9ksWsUYrgOs6qUvk8lvUh4-aVizGcEp_iD8YKPk8PA/viewform" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: bold;">Give Feedback</a>
             </p>
         </div>
 
-        <!-- كارد تسجيل شركة جديدة (مخفي افتراضياً) -->
-        <div id="registerCard" class="login-card" style="display: none; background-color: #1e293b; padding: 32px; border-radius: 12px; border: 1px solid #334155; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto;">
+        <div id="registerCard" class="login-card" style="display: none; max-width: 450px; max-height: 90vh; overflow-y: auto;">
             <h2 style="color: #38bdf8; margin-bottom: 20px; text-align: center;">🏢 Register New Company</h2>
             <form id="registerForm" onsubmit="handleRegister(event)">
                 <div class="form-group">
@@ -288,7 +277,6 @@
                 <button type="submit" class="btn-submit" style="width: 100%; margin-top: 10px; background-color: #0d9488;">Register Company</button>
                 <p id="regError" style="text-align: center; margin-top: 10px; font-size: 0.85rem;"></p>
             </form>
-            <!-- زر العودة لتسجيل الدخول -->
             <p style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 0.9rem;">
                 Already have an account? <a href="#" onclick="toggleView('login')" style="color: #38bdf8; text-decoration: none; font-weight: bold;">Sign In</a>
             </p>
@@ -305,21 +293,6 @@
                 <button class="btn-logout" onclick="logout()">Sign Out</button>
             </div>
         </div>
-    
-    <!-- زر رفع ملف Excel جماعي -->
-<div class="card" style="margin-top: 15px; background-color: #1e293b; border: 1px dashed #334155; padding: 15px; border-radius: 8px;">
-    <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 8px;">📂 Bulk Import via Excel</h4>
-    <p style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 10px;">Upload an Excel file (.xlsx) containing multiple rows to import them instantly.</p>
-    <div style="display: flex; gap: 10px; align-items: center;">
-        <input type="file" id="excelFileBulk" class="form-control" accept=".xlsx, .xls" style="flex: 1;">
-        <select id="excelTargetSheet" class="form-control" style="width: 150px;">
-            <option value="IDs">IDs / Clients</option>
-            <option value="Bookings">Bookings</option>
-        </select>
-        <button type="button" class="btn-submit" onclick="handleBulkExcelUpload()">Upload Excel</button>
-    </div>
-    <span id="bulkUploadStatus" style="font-size: 0.85rem; margin-top: 6px; display: block;"></span>
-</div>
 
         <!-- TAB 1: Daily Operations -->
         <div id="daily-operations" class="tab-content active">
@@ -331,7 +304,7 @@
             </div>
 
             <div class="card" id="newBookingCard">
-                <h3 class="card-title">📝 New Booking</h3>
+                <h3 class="card-title" style="margin-bottom: 15px;">📝 New Booking</h3>
                 <form id="bookingForm" onsubmit="submitBooking(event)">
                     <div class="booking-grid">
                         <div class="form-group">
@@ -377,9 +350,9 @@
                         <div class="form-group"><label>Paid amount</label><input type="number" id="paidAmount" class="form-control" step="0.01"></div>
                         <div class="form-group"><label>Notes</label><input type="text" id="notes" class="form-control"></div>
                     </div>
-                    <div class="form-actions">
+                    <div class="form-actions" style="display: flex; gap: 15px; align-items: center;">
                         <button type="submit" class="btn-submit" id="saveBookingBtn">Save booking</button>
-                        <span id="bookingStatus" style="align-self: center; font-weight: 500;"></span>
+                        <span id="bookingStatus" style="font-weight: 500;"></span>
                     </div>
                 </form>
             </div>
@@ -421,6 +394,7 @@
                 <div class="title-group"><h1>🪪 ID & License Management Dashboard</h1></div>
                 <button class="btn-refresh" onclick="loadData()">🔄 Refresh Data</button>
             </div>
+
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-title">Connection Status</div>
@@ -431,18 +405,47 @@
                     <div class="stat-value" id="total-records">0</div>
                 </div>
             </div>
-            <div class="card" id="uploadCard">
-                <h3 class="card-title" style="margin-bottom: 12px;">📤 Upload New Passport / ID Document</h3>
-                <form id="uploadForm" class="upload-form" onsubmit="uploadDocument(event)">
-                    <input type="file" id="fileInput" class="form-control" accept="image/*,application/pdf" style="flex: 1;" required>
-                    <button type="submit" id="uploadBtn" class="btn-process">✨ Process Document</button>
-                </form>
-                <span id="uploadStatus" class="client-preview-badge" style="display: block; margin-top: 8px;"></span>
+
+            <!-- كارد موحد ومنظم لعمليات الرفع (عمودين متوازيين) -->
+            <div class="card">
+                <h3 class="card-title" style="margin-bottom: 15px; color: #38bdf8;">📤 Document & Data Import Center</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+                    
+                    <!-- 1. الرفع الفردي عبر الذكاء الاصطناعي -->
+                    <div style="background-color: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155;">
+                        <h4 style="font-size: 0.9rem; margin-bottom: 8px; color: #e2e8f0;">✨ Single Document AI Processing</h4>
+                        <form id="uploadForm" onsubmit="uploadDocument(event)" style="display: flex; flex-direction: column; gap: 10px;">
+                            <input type="file" id="fileInput" class="form-control" accept="image/*,application/pdf" required>
+                            <button type="submit" id="uploadBtn" class="btn-process" style="width: 100%;">Process Document</button>
+                        </form>
+                        <span id="uploadStatus" class="client-preview-badge" style="display: block; margin-top: 6px;"></span>
+                    </div>
+
+                    <!-- 2. الرفع الجماعي للأكسل -->
+                    <div style="background-color: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155;">
+                        <h4 style="font-size: 0.9rem; margin-bottom: 8px; color: #e2e8f0;">📂 Bulk Excel Import</h4>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <input type="file" id="excelFileBulk" class="form-control" accept=".xlsx, .xls">
+                            <div style="display: flex; gap: 8px;">
+                                <select id="excelTargetSheet" class="form-control" style="flex: 1;">
+                                    <option value="IDs">IDs / Clients</option>
+                                    <option value="Bookings">Bookings</option>
+                                </select>
+                                <button type="button" class="btn-submit" onclick="handleBulkExcelUpload()">Upload Excel</button>
+                            </div>
+                        </div>
+                        <span id="bulkUploadStatus" style="font-size: 0.8rem; margin-top: 6px; display: block;"></span>
+                    </div>
+
+                </div>
             </div>
+
             <div class="controls-bar">
                 <input type="text" id="search-input" class="search-input" placeholder="🔍 Search documents..." oninput="filterData()">
                 <button class="btn-export" onclick="exportToExcel('data-table')">📊 Export to Excel</button>
             </div>
+            
             <div class="table-container">
                 <table id="data-table">
                     <thead><tr id="table-header"></tr></thead>
@@ -460,7 +463,6 @@
                 <button class="btn-refresh" onclick="loadData()">🔄 Refresh Analytics</button>
             </div>
 
-            <!-- KPI Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-title">New Clients (This Week)</div>
@@ -484,7 +486,6 @@
                 </div>
             </div>
 
-            <!-- Charts Grid -->
             <div class="charts-grid">
                 <div class="card">
                     <h3 style="color:#38bdf8; margin-bottom:15px;">📈 Weekly New Clients Acquisition</h3>
@@ -505,7 +506,6 @@
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwX2ew_Jr_VNGX9-doEZi5UmyqaWboKlFR5qon-ceZOnBlD8pQxqvV4-_0Ia7ScQnLIEg/exec";
-        
         const n8nWebhookUrl = "https://automateflow-n8n.rinoosolutions.com/webhook/upload-passport";
         
         let rawData = [];
@@ -542,7 +542,6 @@
             try {
                 const res = await fetch(`${SCRIPT_URL}?sheet=Users`);
                 const usersData = await res.json();
-
                 const hashedPassword = CryptoJS.SHA256(password).toString();
 
                 let foundUser = null;
@@ -838,7 +837,6 @@
                 setTimeout(() => {
                     loadData();
                 }, 1500);
-                
             } catch (error) {
                 alert("❌ Failed to update booking status.");
                 loadData();
@@ -939,7 +937,7 @@
                 uploadStatus.innerText = "❌ Error processing document: " + err.message;
             } finally {
                 uploadBtn.disabled = false;
-                uploadBtn.innerText = "✨ Process Document";
+                uploadBtn.innerText = "Process Document";
             }
         }
 
@@ -949,7 +947,6 @@
 
         function updateAnalyticsDashboard() {
             if (!rawBookingsData || rawBookingsData.length <= 1) return;
-            
             const rows = rawBookingsData.slice(1);
             
             let weeklyCount = 0;
@@ -960,7 +957,6 @@
             const now = new Date();
             const currentYear = now.getFullYear();
             const currentMonth = now.getMonth();
-            
             const oneWeekAgo = new Date();
             oneWeekAgo.setDate(now.getDate() - 7);
             
@@ -984,7 +980,6 @@
                                 weeklyDaysData[dayName]++;
                             }
                         }
-                        
                         if (bDate.getFullYear() === currentYear && bDate.getMonth() === currentMonth) {
                             monthlyCount++;
                             totalMonthlyRevenue += paid;
@@ -998,12 +993,10 @@
                 } else {
                     paymentStatuses['Partial / Unpaid']++;
                 }
-
                 activityCounts[activity] = (activityCounts[activity] || 0) + 1;
             });
 
             const paidRate = rows.length > 0 ? Math.round((fullyPaidCount / rows.length) * 100) : 0;
-
             document.getElementById('kpi-weekly-clients').innerText = weeklyCount;
             document.getElementById('kpi-monthly-clients').innerText = monthlyCount;
             document.getElementById('kpi-paid-rate').innerText = `${paidRate}%`;
@@ -1063,17 +1056,13 @@
 
         function exportToExcel(tableId) {
             const table = document.getElementById(tableId);
-            if (!table) {
-                alert("Table not found!");
-                return;
-            }
+            if (!table) { alert("Table not found!"); return; }
             
             let csv = [];
             let rows = table.querySelectorAll("tr");
             
             for (let i = 0; i < rows.length; i++) {
                 let row = [], cols = rows[i].querySelectorAll("td, th");
-                
                 for (let j = 0; j < cols.length; j++) {
                     let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/(\s+)/gm, " ");
                     data = data.replace(/"/g, '""');
@@ -1094,11 +1083,9 @@
         async function handleRegister(e) {
             e.preventDefault();
             const companyID = document.getElementById('regCompanyID').value.trim();
-            
             const mEmail = document.getElementById('managerEmail').value.trim();
             const mName = document.getElementById('managerName').value.trim();
             const mPass = document.getElementById('managerPassword').value.trim();
-
             const sEmail = document.getElementById('salesEmail').value.trim();
             const sName = document.getElementById('salesName').value.trim();
             const sPass = document.getElementById('salesPassword').value.trim();
@@ -1142,70 +1129,65 @@
         }
 
         async function handleBulkExcelUpload() {
-    const fileInput = document.getElementById('excelFileBulk');
-    const targetSheet = document.getElementById('excelTargetSheet').value;
-    const statusSpan = document.getElementById('bulkUploadStatus');
+            const fileInput = document.getElementById('excelFileBulk');
+            const targetSheet = document.getElementById('excelTargetSheet').value;
+            const statusSpan = document.getElementById('bulkUploadStatus');
 
-    if (!fileInput.files || fileInput.files.length === 0) {
-        alert("⚠️ Please select an Excel file first.");
-        return;
-    }
-
-    const file = fileInput.files[0];
-    statusSpan.style.color = "#38bdf8";
-    statusSpan.innerText = "⏳ Reading Excel file...";
-
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            
-            // قراءة أول شيت في ملف الـ Excel
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            
-            // تحويل البيانات إلى مصفوفة (JSON)
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-            if (jsonData.length <= 1) {
-                statusSpan.style.color = "#f87171";
-                statusSpan.innerText = "❌ The Excel file is empty or missing data rows.";
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("⚠️ Please select an Excel file first.");
                 return;
             }
 
-            statusSpan.innerText = `⏳ Uploading ${jsonData.length - 1} rows to server...`;
+            const file = fileInput.files[0];
+            statusSpan.style.color = "#38bdf8";
+            statusSpan.innerText = "⏳ Reading Excel file...";
 
-            // إرسال البيانات دفعة واحدة إلى الـ Backend
-            const payload = {
-                action: "bulkImport",
-                target: targetSheet, // "IDs" أو "Bookings"
-                rows: jsonData,      // البيانات كاملة مع العناوين
-                companyID: currentUser ? currentUser.companyID : ""
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (jsonData.length <= 1) {
+                        statusSpan.style.color = "#f87171";
+                        statusSpan.innerText = "❌ The Excel file is empty or missing data rows.";
+                        return;
+                    }
+
+                    statusSpan.innerText = `⏳ Uploading ${jsonData.length - 1} rows to server...`;
+
+                    const payload = {
+                        action: "bulkImport",
+                        target: targetSheet,
+                        rows: jsonData,
+                        companyID: currentUser ? currentUser.companyID : ""
+                    };
+
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    statusSpan.style.color = "#4ade80";
+                    statusSpan.innerText = "✅ Bulk data imported successfully!";
+                    fileInput.value = "";
+                    setTimeout(() => {
+                        loadData();
+                        statusSpan.innerText = "";
+                    }, 2000);
+
+                } catch (err) {
+                    statusSpan.style.color = "#f87171";
+                    statusSpan.innerText = "❌ Error reading Excel: " + err.message;
+                }
             };
-
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            });
-
-            statusSpan.style.color = "#4ade80";
-            statusSpan.innerText = "✅ Bulk data imported successfully!";
-            fileInput.value = "";
-            setTimeout(() => {
-                loadData();
-                statusSpan.innerText = "";
-            }, 2000);
-
-        } catch (err) {
-            statusSpan.style.color = "#f87171";
-            statusSpan.innerText = "❌ Error reading Excel: " + err.message;
+            reader.readAsArrayBuffer(file);
         }
-    };
-    reader.readAsArrayBuffer(file);
-}
     </script>
 </body>
 </html>
