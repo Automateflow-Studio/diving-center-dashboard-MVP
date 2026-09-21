@@ -305,6 +305,21 @@
                 <button class="btn-logout" onclick="logout()">Sign Out</button>
             </div>
         </div>
+    
+    <!-- زر رفع ملف Excel جماعي -->
+<div class="card" style="margin-top: 15px; background-color: #1e293b; border: 1px dashed #334155; padding: 15px; border-radius: 8px;">
+    <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 8px;">📂 Bulk Import via Excel</h4>
+    <p style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 10px;">Upload an Excel file (.xlsx) containing multiple rows to import them instantly.</p>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <input type="file" id="excelFileBulk" class="form-control" accept=".xlsx, .xls" style="flex: 1;">
+        <select id="excelTargetSheet" class="form-control" style="width: 150px;">
+            <option value="IDs">IDs / Clients</option>
+            <option value="Bookings">Bookings</option>
+        </select>
+        <button type="button" class="btn-submit" onclick="handleBulkExcelUpload()">Upload Excel</button>
+    </div>
+    <span id="bulkUploadStatus" style="font-size: 0.85rem; margin-top: 6px; display: block;"></span>
+</div>
 
         <!-- TAB 1: Daily Operations -->
         <div id="daily-operations" class="tab-content active">
@@ -487,20 +502,6 @@
         </div>
     </div>
 
-    <!-- زر رفع ملف Excel جماعي -->
-<div class="card" style="margin-top: 15px; background-color: #1e293b; border: 1px dashed #334155; padding: 15px; border-radius: 8px;">
-    <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 8px;">📂 Bulk Import via Excel</h4>
-    <p style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 10px;">Upload an Excel file (.xlsx) containing multiple rows to import them instantly.</p>
-    <div style="display: flex; gap: 10px; align-items: center;">
-        <input type="file" id="excelFileBulk" class="form-control" accept=".xlsx, .xls" style="flex: 1;">
-        <select id="excelTargetSheet" class="form-control" style="width: 150px;">
-            <option value="IDs">IDs / Clients</option>
-            <option value="Bookings">Bookings</option>
-        </select>
-        <button type="button" class="btn-submit" onclick="handleBulkExcelUpload()">Upload Excel</button>
-    </div>
-    <span id="bulkUploadStatus" style="font-size: 0.85rem; margin-top: 6px; display: block;"></span>
-</div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwX2ew_Jr_VNGX9-doEZi5UmyqaWboKlFR5qon-ceZOnBlD8pQxqvV4-_0Ia7ScQnLIEg/exec";
