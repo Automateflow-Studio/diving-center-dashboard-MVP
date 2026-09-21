@@ -357,6 +357,17 @@
                 </form>
             </div>
 
+            <!-- كارد الرفع الجماعي للحجوزات -->
+            <div class="card" style="padding: 15px;">
+                <h4 style="color: #38bdf8; font-size: 0.9rem; margin-bottom: 8px;">📂 Bulk Bookings Excel Import</h4>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="file" id="excelFileBulkBookings" class="form-control" accept=".xlsx, .xls" style="flex: 1;">
+                    <input type="hidden" id="excelTargetSheetBookings" value="Bookings">
+                    <button type="button" class="btn-submit" onclick="handleBulkExcelUploadCustom('excelFileBulkBookings', 'Bookings', 'bulkUploadStatusBookings')">Upload Bookings Excel</button>
+                </div>
+                <span id="bulkUploadStatusBookings" style="font-size: 0.8rem; margin-top: 6px; display: block;"></span>
+            </div>
+
             <div class="controls-bar">
                 <input type="text" id="search-booking" class="search-input" placeholder="🔍 Search Bookings..." oninput="filterBookings()">
                 <button class="btn-export" onclick="exportToExcel('bookings-table')">📊 Export CSV</button>
@@ -422,17 +433,14 @@
                         <span id="uploadStatus" class="client-preview-badge" style="display: block; margin-top: 6px;"></span>
                     </div>
 
-                    <!-- 2. الرفع الجماعي للأكسل -->
+                    <!-- 2. الرفع الجماعي للأكسل (هويات) -->
                     <div style="background-color: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155;">
                         <h4 style="font-size: 0.9rem; margin-bottom: 8px; color: #e2e8f0;">📂 Bulk Excel Import</h4>
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <input type="file" id="excelFileBulk" class="form-control" accept=".xlsx, .xls">
                             <div style="display: flex; gap: 8px;">
-                                <select id="excelTargetSheet" class="form-control" style="flex: 1;">
-                                    <option value="IDs">IDs / Clients</option>
-                                    <option value="Bookings">Bookings</option>
-                                </select>
-                                <button type="button" class="btn-submit" onclick="handleBulkExcelUpload()">Upload Excel</button>
+                                <input type="hidden" id="excelTargetSheet" value="IDs">
+                                <button type="button" class="btn-submit" onclick="handleBulkExcelUploadCustom('excelFileBulk', 'IDs', 'bulkUploadStatus')" style="width: 100%;">Upload Excel IDs</button>
                             </div>
                         </div>
                         <span id="bulkUploadStatus" style="font-size: 0.8rem; margin-top: 6px; display: block;"></span>
@@ -1128,10 +1136,9 @@
             }
         }
 
-        async function handleBulkExcelUpload() {
-            const fileInput = document.getElementById('excelFileBulk');
-            const targetSheet = document.getElementById('excelTargetSheet').value;
-            const statusSpan = document.getElementById('bulkUploadStatus');
+        async function handleBulkExcelUploadCustom(fileInputId, targetSheetName, statusSpanId) {
+            const fileInput = document.getElementById(fileInputId);
+            const statusSpan = document.getElementById(statusSpanId);
 
             if (!fileInput.files || fileInput.files.length === 0) {
                 alert("⚠️ Please select an Excel file first.");
@@ -1161,7 +1168,7 @@
 
                     const payload = {
                         action: "bulkImport",
-                        target: targetSheet,
+                        target: targetSheetName,
                         rows: jsonData,
                         companyID: currentUser ? currentUser.companyID : ""
                     };
