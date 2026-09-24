@@ -652,21 +652,6 @@
             document.getElementById('voucherNo').value = maxVoucher + 1;
         }
 
-        // دالة لتنظيف وتنسيق النصوص والتواريخ المشوهة (مثل التي تحتوي على T واختصارات الوقت)
-        function cleanCellValue(headerName, val) {
-            if (val === null || val === undefined) return '';
-            let sVal = String(val).trim();
-            
-            // فحص إذا كان العمود يعبر عن تاريخ (Date, dob, issue, expiry, created_at)
-            const h = headerName.toLowerCase();
-            if (h.includes('date') || h.includes('_at')) {
-                if (sVal.includes('T')) {
-                    sVal = sVal.split('T')[0]; // أخذ الجزء الخاص بالتاريخ فقط وإزالة الـ Time والشوائب
-                }
-            }
-            return sVal;
-        }
-
         async function loadData() {
             const statusElem = document.getElementById('connection-status');
             if (statusElem) statusElem.innerText = 'Loading...';
@@ -675,47 +660,26 @@
 
             try {
                 const res1 = await fetch(`${SCRIPT_URL}?sheet=الورقة1&companyID=${compID}&_t=${timestamp}`);
-                let data1 = await res1.json();
+                const data1 = await res1.json();
 
                 if (data1 && data1.length > 0) {
                     if (statusElem) {
                         statusElem.innerText = 'Connected 🟢';
                         statusElem.className = 'stat-value status-connected';
                     }
-
-                    // تنظيف الأعمدة الزائدة والتواريخ غير المنسقة وتوحيد ترويسات الجدول
-                    let headers = data1[0].map(h => String(h).trim());
-                    
-                    // إزالة الأعمدة المكررة أو الزائدة مثل CompanyID الإضافية في النهاية إذا وُجدت
-                    let validHeadersCount = headers.length;
-                    // البحث عن العمود الأخير المكرر (مثل CompanyID إذا ظهر عمود إضافي فارغ أو مكرر)
-                    const cleanedHeaders = [];
-                    const seenHeaders = new Set();
-                    headers.forEach(h => {
-                        let lowerH = h.toLowerCase();
-                        if (lowerH === 'companyid' && seenHeaders.has('companyid')) {
-                            // تخطي العمود الزائد المتكرر
-                            return;
-                        }
-                        seenHeaders.add(lowerH);
-                        cleanedHeaders.push(h);
-                    });
-
-                    data1[0] = cleanedHeaders;
-                    for (let i = 1; i < data1.length; i++) {
-                        let newRow = [];
-                        for (let j = 0; j < cleanedHeaders.length; j++) {
-                            newRow.push(cleanCellValue(cleanedHeaders[j], data1[i][j]));
-                        }
-                        data1[i] = newRow;
-                    }
-
                     rawData = data1;
                     
-                    const lowerHeaders = cleanedHeaders.map(h => h.toLowerCase());
-                    const idIndex = lowerHeaders.indexOf('id_number') !== -1 ? lowerHeaders.indexOf('id_number') : 2;
-                    const nameIndex = lowerHeaders.indexOf('full_name') !== -1 ? lowerHeaders.indexOf('full_name') : 0;
-                    const authorityIndex = lowerHeaders.indexOf('issuing_authority') !== -1 ? lowerHeaders.indexOf('issuing_authority') : 1;
+                    const headers = data1[0].map(h => String(h).trim().toLowerCase());
+                    
+                    // تحليل مرن للأعمدة سواء بالعربية أو الإنجليزية
+                    let idIndex = headers.findIndex(h => h.includes('id') || h.includes('passport') || h.includes('هوية') || h.includes('جواز'));
+                    if (idIndex === -1) idIndex = 3;
+
+                    let nameIndex = headers.findIndex(h => h.includes('name') || h.includes('الاسم') || h.includes('اسم'));
+                    if (nameIndex === -1) nameIndex = 0;
+
+                    let authorityIndex = headers.findIndex(h => h.includes('authority') || h.includes('nationality') || h.includes('جهة') || h.includes('جنسية'));
+                    if (authorityIndex === -1) authorityIndex = 2;
 
                     clientMap = {};
                     data1.slice(1).forEach(row => {
@@ -1163,7 +1127,6 @@
                     body: JSON.stringify(payload)
                 });
                 
-                errScaleElem = errElem;
                 errElem.style.color = "#4ade80";
                 errElem.innerText = "✅ Company registered successfully! You can now sign in.";
                 document.getElementById('registerForm').reset();
