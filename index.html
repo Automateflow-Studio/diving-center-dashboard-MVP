@@ -135,9 +135,6 @@
 
         .stat-title { font-size: 0.875rem; color: #94a3b8; margin-bottom: 8px; }
         .stat-value { font-size: 1.875rem; font-weight: bold; }
-        .stat-trend { font-size: 0.8rem; font-weight: 600; margin-top: 6px; }
-        .trend-up { color: #4ade80; }
-        .trend-down { color: #f87171; }
         .status-connected { color: #4ade80; }
 
         .form-group {
@@ -671,7 +668,6 @@
                     
                     const headers = data1[0].map(h => String(h).trim().toLowerCase());
                     
-                    // تحليل مرن للأعمدة سواء بالعربية أو الإنجليزية
                     let idIndex = headers.findIndex(h => h.includes('id') || h.includes('passport') || h.includes('هوية') || h.includes('جواز'));
                     if (idIndex === -1) idIndex = 3;
 
@@ -1143,6 +1139,33 @@
             }
         }
 
+        // دالة مساعدة لتنظيف وتوحيد صيغة التواريخ (تمنع ظهور أرقام أكسل التسلسلية أو تواريخ T بصيغة طويلة)
+        function cleanExcelDate(val) {
+            if (val === null || val === undefined || val === '') return '';
+            
+            // إذا كان رقماً تسلسلياً لبرنامج إكسل (مثل 36378)
+            if (typeof val === 'number' || (!isNaN(val) && String(val).trim() !== '' && !String(val).includes('-') && !String(val).includes('/'))) {
+                const excelDate = new Date(Math.round((val - (25567 + 2)) * 86400 * 1000));
+                if (!isNaN(excelDate.getTime())) {
+                    return excelDate.toISOString().split('T')[0];
+                }
+            }
+
+            let strVal = String(val).trim();
+            // إذا كان يحتوي على حرف T (صيغة ISO)
+            if (strVal.includes('T')) {
+                return strVal.split('T')[0];
+            }
+
+            // محاولة تحويل أي تاريخ نصي آخر لصيغة قياسية YYYY-MM-DD
+            const parsedDate = new Date(strVal);
+            if (!isNaN(parsedDate.getTime()) && strVal.length > 4) {
+                return parsedDate.toISOString().split('T')[0];
+            }
+
+            return strVal;
+        }
+
         async function handleBulkExcelUploadCustom(fileInputId, targetSheetName, statusSpanId) {
             const fileInput = document.getElementById(fileInputId);
             const statusSpan = document.getElementById(statusSpanId);
@@ -1171,12 +1194,33 @@
                         return;
                     }
 
-                    statusSpan.innerText = `⏳ Uploading ${jsonData.length - 1} rows to server...`;
+                    const headers = jsonData[0].map(h => String(h).trim().toLowerCase());
+                    
+                    // تحديد أعمدة التاريخ تلقائياً لتنظيفها وتوحيدها
+                    const dateIndices = [];
+                    headers.forEach((h, idx) => {
+                        if (h.includes('date') || h.includes('تاريخ') || h.includes('birth') || h.includes('expiry') || h.includes('issue')) {
+                            dateIndices.push(idx);
+                        }
+                    });
+
+                    // تنظيف صفوف البيانات وتوحيد التواريخ
+                    const cleanedRows = jsonData.map((row, rowIndex) => {
+                        if (rowIndex === 0) return row; // إبقاء الهيدر كما هو
+                        return row.map((cell, colIndex) => {
+                            if (dateIndices.includes(colIndex)) {
+                                return cleanExcelDate(cell);
+                            }
+                            return cell;
+                        });
+                    });
+
+                    statusSpan.innerText = `⏳ Uploading ${cleanedRows.length - 1} rows to server...`;
 
                     const payload = {
                         action: "bulkImport",
                         target: targetSheetName,
-                        rows: jsonData,
+                        rows: cleanedRows,
                         companyID: currentUser ? currentUser.companyID : ""
                     };
 
@@ -1188,7 +1232,7 @@
                     });
 
                     statusSpan.style.color = "#4ade80";
-                    statusSpan.innerText = "✅ Bulk data imported successfully!";
+                    statusSpan.innerText = "✅ Bulk data imported successfully with clean dates!";
                     fileInput.value = "";
                     setTimeout(() => {
                         loadData();
