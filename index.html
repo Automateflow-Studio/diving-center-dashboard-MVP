@@ -979,7 +979,15 @@
                 const activity = row[4] || 'Other';
                 
                 if (bookingDateStr) {
-                    const bDate = new Date(bookingDateStr);
+                    
+                    // استبدل السطر القديم بالآتي لضمان قراءة التاريخ المحلي بشكل صحيح:
+                    const parts = bookingDateStr.split('T')[0].split('-');
+                    let bDate = null;
+                    if (parts.length === 3) {
+                                            bDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                    } else {
+                                            bDate = new Date(bookingDateStr);
+                    }
                     if (!isNaN(bDate.getTime())) {
                         if (bDate >= oneWeekAgo && bDate <= now) {
                             weeklyCount++;
