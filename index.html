@@ -609,6 +609,10 @@
 
         function lookupClientInfo() {
             const clientIDInput = document.getElementById('clientID').value.trim().toLowerCase();
+            if (clientMap[clientIDInput]) {
+              alert("this ID is already registered and we cannot duplicate it ❌");
+              return; // Stop the process
+            }
             const nameInput = document.getElementById('customerName');
             const natInput = document.getElementById('nationality');
             const badge = document.getElementById('clientPreviewBadge');
