@@ -652,6 +652,21 @@
             document.getElementById('voucherNo').value = maxVoucher + 1;
         }
 
+        // دالة لتنظيف وتنسيق النصوص والتواريخ المشوهة (مثل التي تحتوي على T واختصارات الوقت)
+        function cleanCellValue(headerName, val) {
+            if (val === null || val === undefined) return '';
+            let sVal = String(val).trim();
+            
+            // فحص إذا كان العمود يعبر عن تاريخ (Date, dob, issue, expiry, created_at)
+            const h = headerName.toLowerCase();
+            if (h.includes('date') || h.includes('_at')) {
+                if (sVal.includes('T')) {
+                    sVal = sVal.split('T')[0]; // أخذ الجزء الخاص بالتاريخ فقط وإزالة الـ Time والشوائب
+                }
+            }
+            return sVal;
+        }
+
         async function loadData() {
             const statusElem = document.getElementById('connection-status');
             if (statusElem) statusElem.innerText = 'Loading...';
@@ -660,19 +675,47 @@
 
             try {
                 const res1 = await fetch(`${SCRIPT_URL}?sheet=الورقة1&companyID=${compID}&_t=${timestamp}`);
-                const data1 = await res1.json();
+                let data1 = await res1.json();
 
                 if (data1 && data1.length > 0) {
                     if (statusElem) {
                         statusElem.innerText = 'Connected 🟢';
                         statusElem.className = 'stat-value status-connected';
                     }
+
+                    // تنظيف الأعمدة الزائدة والتواريخ غير المنسقة وتوحيد ترويسات الجدول
+                    let headers = data1[0].map(h => String(h).trim());
+                    
+                    // إزالة الأعمدة المكررة أو الزائدة مثل CompanyID الإضافية في النهاية إذا وُجدت
+                    let validHeadersCount = headers.length;
+                    // البحث عن العمود الأخير المكرر (مثل CompanyID إذا ظهر عمود إضافي فارغ أو مكرر)
+                    const cleanedHeaders = [];
+                    const seenHeaders = new Set();
+                    headers.forEach(h => {
+                        let lowerH = h.toLowerCase();
+                        if (lowerH === 'companyid' && seenHeaders.has('companyid')) {
+                            // تخطي العمود الزائد المتكرر
+                            return;
+                        }
+                        seenHeaders.add(lowerH);
+                        cleanedHeaders.push(h);
+                    });
+
+                    data1[0] = cleanedHeaders;
+                    for (let i = 1; i < data1.length; i++) {
+                        let newRow = [];
+                        for (let j = 0; j < cleanedHeaders.length; j++) {
+                            newRow.push(cleanCellValue(cleanedHeaders[j], data1[i][j]));
+                        }
+                        data1[i] = newRow;
+                    }
+
                     rawData = data1;
                     
-                    const headers = data1[0].map(h => String(h).trim().toLowerCase());
-                    const idIndex = headers.indexOf('id_number') !== -1 ? headers.indexOf('id_number') : 3;
-                    const nameIndex = headers.indexOf('full_name') !== -1 ? headers.indexOf('full_name') : 0;
-                    const authorityIndex = headers.indexOf('issuing_authority') !== -1 ? headers.indexOf('issuing_authority') : 2;
+                    const lowerHeaders = cleanedHeaders.map(h => h.toLowerCase());
+                    const idIndex = lowerHeaders.indexOf('id_number') !== -1 ? lowerHeaders.indexOf('id_number') : 2;
+                    const nameIndex = lowerHeaders.indexOf('full_name') !== -1 ? lowerHeaders.indexOf('full_name') : 0;
+                    const authorityIndex = lowerHeaders.indexOf('issuing_authority') !== -1 ? lowerHeaders.indexOf('issuing_authority') : 1;
 
                     clientMap = {};
                     data1.slice(1).forEach(row => {
@@ -979,16 +1022,7 @@
                 const activity = row[4] || 'Other';
                 
                 if (bookingDateStr) {
-                    // معالجة دقيقة لتفادي خطأ الفارق الزمني (Timezone offset)
-                    let bDate = null;
-                    const cleanDateStr = String(bookingDateStr).split('T')[0];
-                    const parts = cleanDateStr.split('-');
-                    if (parts.length === 3) {
-                        bDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-                    } else {
-                        bDate = new Date(bookingDateStr);
-                    }
-
+                    const bDate = new Date(bookingDateStr);
                     if (!isNaN(bDate.getTime())) {
                         if (bDate >= oneWeekAgo && bDate <= now) {
                             weeklyCount++;
@@ -1129,6 +1163,7 @@
                     body: JSON.stringify(payload)
                 });
                 
+                errScaleElem = errElem;
                 errElem.style.color = "#4ade80";
                 errElem.innerText = "✅ Company registered successfully! You can now sign in.";
                 document.getElementById('registerForm').reset();
@@ -1162,8 +1197,7 @@
             reader.onload = async function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
-                    // تفعيل قراءة التواريخ بشكل صحيح لتفادي أخطاء السيريال وتحويلها لأيام خاطئة
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
